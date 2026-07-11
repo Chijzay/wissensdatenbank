@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Mic, MicOff, Send, Search, X, Plus, ArrowLeft, ChevronRight, ChevronDown, Trash2, Sparkles, Shuffle, GraduationCap, GripVertical } from 'lucide-react';
+import { Mic, MicOff, Send, Search, X, Plus, ArrowLeft, ChevronRight, ChevronDown, Trash2, Sparkles, Shuffle, GraduationCap, GripVertical, LogOut } from 'lucide-react';
 import { api } from '../api/client.js';
 import { DndContext, closestCenter, PointerSensor, TouchSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, rectSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable';
@@ -389,7 +389,7 @@ export default function Home({ onOpenEntry, onStartReview, onShowImpressum }) {
               onMouseEnter={e => { e.currentTarget.style.background = 'var(--surface2)'; e.currentTarget.style.borderColor = '#ef4444'; e.currentTarget.style.color = '#ef4444'; }}
               onMouseLeave={e => { e.currentTarget.style.background = 'var(--surface)'; e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-muted)'; }}
             >
-              ⏻
+              <LogOut size={16} />
             </button>
           </>
         )}
