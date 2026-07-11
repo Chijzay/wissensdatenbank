@@ -111,8 +111,15 @@ export default function EntryDetail({ entry, onClose, onStartQuiz, onNavigate })
   const [saved, setSaved] = useState(true);
   const [error, setError] = useState('');
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [fontSize, setFontSize] = useState(() => parseInt(localStorage.getItem('cr-font-size') || '13'));
   const recognitionRef = useRef(null);
   const taRef = useRef(null);
+
+  const changeFontSize = (delta) => {
+    const s = Math.min(22, Math.max(10, fontSize + delta));
+    setFontSize(s);
+    localStorage.setItem('cr-font-size', s);
+  };
 
   // Vollständigen Eintrag + Themen laden
   useEffect(() => {
@@ -254,6 +261,12 @@ export default function EntryDetail({ entry, onClose, onStartQuiz, onNavigate })
           <ArrowLeft size={15} /> Zurück
         </button>
         <div style={{ flex: 1 }} />
+        <div style={{ display: 'flex', alignItems: 'center', border: '1px solid var(--border)', borderRadius: 8, overflow: 'hidden' }}>
+          <button onClick={() => changeFontSize(-1)} title="Kleiner"
+            style={{ padding: '7px 10px', color: 'var(--text-muted)', fontSize: 13, fontWeight: 700, borderRight: '1px solid var(--border)' }}>A−</button>
+          <button onClick={() => changeFontSize(1)} title="Größer"
+            style={{ padding: '7px 10px', color: 'var(--text-muted)', fontSize: 15, fontWeight: 700 }}>A+</button>
+        </div>
         <button onClick={() => setShowMeta(m => !m)}
           style={{ padding: 8, borderRadius: 8, border: '1px solid var(--border)', color: showMeta ? 'var(--accent)' : 'var(--text-muted)' }}>
           <Info size={15} />
@@ -309,7 +322,7 @@ export default function EntryDetail({ entry, onClose, onStartQuiz, onNavigate })
             style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px', minHeight: 120, cursor: 'text' }}
             title="Klicken zum Bearbeiten">
             {content ? (
-              <ContentRenderer text={content} style={{ fontSize: 15 }} />
+              <ContentRenderer text={content} style={{ fontSize }} />
             ) : (
               <span style={{ color: 'var(--text-muted)', fontSize: 14 }}>Klicken zum Schreiben…</span>
             )}
