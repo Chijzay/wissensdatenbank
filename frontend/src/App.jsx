@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { api } from './api/client.js';
 import Home from './components/Home.jsx';
 import EntryDetail from './components/EntryDetail.jsx';
 import QuizMode from './components/QuizMode.jsx';
@@ -15,6 +16,7 @@ export default function App() {
   const [activeEntry, setActiveEntry] = useState(null);
   const [quizEntry, setQuizEntry] = useState(null);
   const [reviewCards, setReviewCards] = useState(null);
+  const navRestored = useRef(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => setSession(session));
@@ -23,6 +25,28 @@ export default function App() {
     });
     return () => subscription.unsubscribe();
   }, []);
+
+  // Letzten offenen Eintrag nach Login wiederherstellen
+  useEffect(() => {
+    if (!session || navRestored.current) return;
+    navRestored.current = true;
+    const savedId = localStorage.getItem('nav-entry-id');
+    if (!savedId) return;
+    Promise.all([api.cards.get(Number(savedId)), api.boxes.list()])
+      .then(([card, boxes]) => {
+        const box = boxes.find(b => b.id === card.box_id) || {};
+        setActiveEntry({ ...card, box_name: box.name || '', box_color: box.color || '', box_icon: box.icon || '', box_parent_id: box.parent_id || null });
+        setView('entry');
+      })
+      .catch(() => localStorage.removeItem('nav-entry-id'));
+  }, [session]);
+
+  // Eintragszustand speichern
+  useEffect(() => {
+    if (!session) return;
+    if (view === 'entry' && activeEntry) localStorage.setItem('nav-entry-id', activeEntry.id);
+    else localStorage.removeItem('nav-entry-id');
+  }, [view, activeEntry, session]);
 
   // Laden
   if (session === undefined) return (

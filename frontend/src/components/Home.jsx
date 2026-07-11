@@ -52,6 +52,7 @@ export default function Home({ onOpenEntry, onStartReview, onShowImpressum }) {
   const [activeBereich, setActiveBereich] = useState(null);
   const [activeBox, setActiveBox] = useState(null);
   const [expanded, setExpanded] = useState(new Set());
+  const navRestored = useRef(false);
 
   // Capture
   const [content, setContent] = useState('');
@@ -128,6 +129,36 @@ export default function Home({ onOpenEntry, onStartReview, onShowImpressum }) {
   }, [activeBox, activeBereich, search]);
 
   useEffect(() => { loadBoxes(); }, [loadBoxes]);
+
+  // Navigation nach Reload wiederherstellen (einmalig nach dem ersten Box-Laden)
+  useEffect(() => {
+    if (!allBoxes.length || navRestored.current) return;
+    navRestored.current = true;
+    const bereichId = Number(localStorage.getItem('nav-bereich-id'));
+    const boxId = Number(localStorage.getItem('nav-box-id'));
+    if (bereichId) {
+      const bereich = allBoxes.find(b => b.id === bereichId);
+      if (bereich) {
+        setActiveBereich(bereich);
+        setExpanded(prev => new Set([...prev, bereich.id]));
+        if (boxId) {
+          const box = allBoxes.find(b => b.id === boxId);
+          if (box) { setActiveBox(box); setSaveToBox(box); }
+        }
+      }
+    }
+  }, [allBoxes]);
+
+  // Bereich/Box-Position speichern
+  useEffect(() => {
+    if (activeBereich) localStorage.setItem('nav-bereich-id', activeBereich.id);
+    else localStorage.removeItem('nav-bereich-id');
+  }, [activeBereich]);
+  useEffect(() => {
+    if (activeBox) localStorage.setItem('nav-box-id', activeBox.id);
+    else localStorage.removeItem('nav-box-id');
+  }, [activeBox]);
+
   useEffect(() => { loadEntries(); }, [loadEntries]);
   useEffect(() => { const t = setTimeout(loadEntries, 280); return () => clearTimeout(t); }, [search]);
 
