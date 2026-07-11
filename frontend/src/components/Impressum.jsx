@@ -28,10 +28,9 @@ export default function Impressum({ onClose }) {
             Verantwortlich
           </h2>
           <p style={{ color: 'var(--text)', lineHeight: 1.8, fontSize: 15 }}>
-            {/* HIER DEINEN NAMEN UND ADRESSE EINTRAGEN */}
             Steven Illg<br />
-            Musterstraße 1<br />
-            12345 Musterstadt<br />
+            Mümmelmannsberg 68<br />
+            22115 Hamburg<br />
             Deutschland
           </p>
         </section>
