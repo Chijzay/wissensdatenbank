@@ -16,6 +16,7 @@ export default function App() {
   const [activeEntry, setActiveEntry] = useState(null);
   const [quizEntry, setQuizEntry] = useState(null);
   const [reviewCards, setReviewCards] = useState(null);
+  const [restoring, setRestoring] = useState(false);
   const navRestored = useRef(false);
 
   useEffect(() => {
@@ -26,19 +27,21 @@ export default function App() {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Letzten offenen Eintrag nach Login wiederherstellen
+  // Letzten offenen Eintrag nach Login wiederherstellen (ohne Startseiten-Flash)
   useEffect(() => {
     if (!session || navRestored.current) return;
     navRestored.current = true;
     const savedId = localStorage.getItem('nav-entry-id');
     if (!savedId) return;
+    setRestoring(true);
     Promise.all([api.cards.get(Number(savedId)), api.boxes.list()])
       .then(([card, boxes]) => {
         const box = boxes.find(b => b.id === card.box_id) || {};
         setActiveEntry({ ...card, box_name: box.name || '', box_color: box.color || '', box_icon: box.icon || '', box_parent_id: box.parent_id || null });
         setView('entry');
       })
-      .catch(() => localStorage.removeItem('nav-entry-id'));
+      .catch(() => localStorage.removeItem('nav-entry-id'))
+      .finally(() => setRestoring(false));
   }, [session]);
 
   // Eintragszustand speichern
@@ -49,7 +52,7 @@ export default function App() {
   }, [view, activeEntry, session]);
 
   // Laden
-  if (session === undefined) return (
+  if (session === undefined || restoring) return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ color: 'var(--text-muted)', fontSize: 14 }}>Laden…</div>
     </div>

@@ -89,8 +89,24 @@ function parseAiError(err) {
 }
 
 export default function EntryDetail({ entry, onClose, onStartQuiz, onNavigate }) {
-  const [title, setTitle] = useState(entry.title || '');
-  const [content, setContent] = useState(entry.content || '');
+  const DRAFT_KEY = `draft-card-${entry.id}`;
+
+  // Entwurf aus localStorage lesen (einmalig bei Mount)
+  const [title, setTitle] = useState(() => {
+    try { const d = JSON.parse(localStorage.getItem(`draft-card-${entry.id}`)); if (d?.title != null) return d.title; } catch {}
+    return entry.title || '';
+  });
+  const [content, setContent] = useState(() => {
+    try { const d = JSON.parse(localStorage.getItem(`draft-card-${entry.id}`)); if (d?.content != null) return d.content; } catch {}
+    return entry.content || '';
+  });
+  const [saved, setSaved] = useState(() => {
+    try {
+      const d = JSON.parse(localStorage.getItem(`draft-card-${entry.id}`));
+      return !d || (d.title === (entry.title || '') && d.content === (entry.content || ''));
+    } catch { return true; }
+  });
+
   const [tags, setTags] = useState([]);
   const [tagInput, setTagInput] = useState('');
   const [category, setCategory] = useState(entry.category || '');
@@ -108,11 +124,12 @@ export default function EntryDetail({ entry, onClose, onStartQuiz, onNavigate })
   const [showKI, setShowKI] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [showMeta, setShowMeta] = useState(false);
-  const [saved, setSaved] = useState(true);
   const [error, setError] = useState('');
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [fontSize, setFontSize] = useState(() => parseInt(localStorage.getItem('cr-font-size') || '13'));
   const recognitionRef = useRef(null);
+  const recordingRef = useRef(false);
+  const startContentRef = useRef('');
   const taRef = useRef(null);
 
   const changeFontSize = (delta) => {
@@ -120,6 +137,11 @@ export default function EntryDetail({ entry, onClose, onStartQuiz, onNavigate })
     setFontSize(s);
     localStorage.setItem('cr-font-size', s);
   };
+
+  // Entwurf bei jeder Änderung speichern
+  useEffect(() => {
+    localStorage.setItem(DRAFT_KEY, JSON.stringify({ title, content }));
+  }, [title, content, DRAFT_KEY]);
 
   // Vollständigen Eintrag + Themen laden
   useEffect(() => {
@@ -134,15 +156,12 @@ export default function EntryDetail({ entry, onClose, onStartQuiz, onNavigate })
 
   const save = async () => {
     try {
-      await api.cards.update(entry.id, {
-        title, content, tags,
-        category,
-        box_id: currentTopic.id
-      });
+      await api.cards.update(entry.id, { title, content, tags, category, box_id: currentTopic.id });
       setSaved(true);
       setError('');
+      localStorage.removeItem(DRAFT_KEY);
     } catch {
-      setError('Speichern fehlgeschlagen — Backend läuft?');
+      setError('Speichern fehlgeschlagen.');
     }
   };
 
@@ -229,21 +248,66 @@ export default function EntryDetail({ entry, onClose, onStartQuiz, onNavigate })
 
   const toggleRecording = () => {
     if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
-      setError('Spracherkennung nur in Chrome/Edge verfügbar — nicht im eingebetteten Vorschaufenster');
+      setError('Spracherkennung nur in Chrome/Edge verfügbar');
       return;
     }
-    if (recording) { recognitionRef.current?.stop(); setRecording(false); return; }
+    if (recordingRef.current) {
+      recordingRef.current = false;
+      recognitionRef.current?.stop();
+      setRecording(false);
+      return;
+    }
+
+    startContentRef.current = content;
+    let finalText = '';
+
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     const rec = new SR();
-    rec.lang = 'de-DE'; rec.continuous = true; rec.interimResults = false;
+    rec.lang = 'de-DE';
+    rec.continuous = true;
+    rec.interimResults = true;
+
     rec.onresult = (e) => {
-      const t = Array.from(e.results).map(r => r[0].transcript).join(' ');
-      setContent(prev => prev ? prev + ' ' + t : t);
+      let newFinal = '';
+      for (let i = 0; i < e.results.length; i++) {
+        if (e.results[i].isFinal) newFinal += e.results[i][0].transcript + ' ';
+      }
+      finalText = newFinal.trim();
+      const combined = startContentRef.current
+        ? startContentRef.current + '\n' + finalText
+        : finalText;
+      setContent(combined);
       setSaved(false);
     };
-    rec.onerror = () => setError('Mikrofon-Zugriff verweigert.');
-    rec.onend = () => setRecording(false);
-    rec.start(); recognitionRef.current = rec; setRecording(true);
+
+    rec.onerror = (ev) => {
+      if (ev.error !== 'no-speech') setError('Mikrofon-Zugriff verweigert.');
+    };
+
+    rec.onend = () => {
+      if (recordingRef.current) {
+        // Neu starten nach Stille (Android Chrome stoppt automatisch)
+        startContentRef.current = startContentRef.current
+          ? startContentRef.current + (finalText ? '\n' + finalText : '')
+          : finalText;
+        finalText = '';
+        try { rec.start(); } catch {
+          recordingRef.current = false;
+          setRecording(false);
+        }
+      } else {
+        setRecording(false);
+      }
+    };
+
+    try {
+      rec.start();
+      recognitionRef.current = rec;
+      recordingRef.current = true;
+      setRecording(true);
+    } catch (err) {
+      setError(`Diktat konnte nicht starten: ${err.message}`);
+    }
   };
 
   const handleClose = async () => {
@@ -261,6 +325,11 @@ export default function EntryDetail({ entry, onClose, onStartQuiz, onNavigate })
           <ArrowLeft size={15} /> Zurück
         </button>
         <div style={{ flex: 1 }} />
+        {!saved && (
+          <span style={{ fontSize: 11, padding: '3px 8px', background: '#f59e0b22', color: '#f59e0b', borderRadius: 6, border: '1px solid #f59e0b55', fontWeight: 600, letterSpacing: 0.3 }}>
+            Entwurf
+          </span>
+        )}
         <div style={{ display: 'flex', alignItems: 'center', border: '1px solid var(--border)', borderRadius: 8, overflow: 'hidden' }}>
           <button onClick={() => changeFontSize(-1)} title="Kleiner"
             style={{ padding: '7px 10px', color: 'var(--text-muted)', fontSize: 13, fontWeight: 700, borderRight: '1px solid var(--border)' }}>A−</button>

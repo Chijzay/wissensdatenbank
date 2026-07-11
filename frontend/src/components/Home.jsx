@@ -297,7 +297,13 @@ export default function Home({ onOpenEntry, onStartReview, onShowImpressum }) {
       recordingRef.current = false;
       setRecording(false);
     };
-    rec.onend = () => { recordingRef.current = false; setRecording(false); };
+    rec.onend = () => {
+      if (recordingRef.current) {
+        try { rec.start(); } catch { recordingRef.current = false; setRecording(false); }
+      } else {
+        setRecording(false);
+      }
+    };
     try {
       rec.start();
       recognitionRef.current = rec;
