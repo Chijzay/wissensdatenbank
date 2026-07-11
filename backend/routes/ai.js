@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import Anthropic from '@anthropic-ai/sdk';
-import db from '../database.js';
+import { supabase } from '../supabase.js';
 
 const router = Router();
 
@@ -23,13 +23,11 @@ async function callAI(messages, maxTokens = 512) {
 }
 
 function parseJSON(text) {
-  // Strip markdown code fences
   const fenced = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
   const cleaned = (fenced ? fenced[1] : text).trim();
   try {
     return JSON.parse(cleaned);
   } catch {
-    // AI added trailing text after the JSON — extract first array or object
     const arr = cleaned.match(/\[[\s\S]*?\]/);
     const obj = cleaned.match(/\{[\s\S]*?\}/);
     const found = arr || obj;
@@ -50,9 +48,8 @@ Inhalt: ${content}`
     }]);
     const questions = parseJSON(text);
     if (card_id) {
-      db.prepare('DELETE FROM card_questions WHERE card_id = ?').run(card_id);
-      const insert = db.prepare('INSERT INTO card_questions (card_id, question) VALUES (?, ?)');
-      for (const q of questions) insert.run(card_id, q);
+      await supabase.from('card_questions').delete().eq('card_id', card_id);
+      await supabase.from('card_questions').insert(questions.map(q => ({ card_id: Number(card_id), question: q })));
     }
     res.json({ questions });
   } catch (err) {
@@ -81,15 +78,16 @@ Inhalt: ${content?.slice(0, 400) || ''}`
 router.post('/suggest-links', async (req, res) => {
   try {
     const { card_id, title, content } = req.body;
-    const allCards = db.prepare(
-      `SELECT c.id, c.title, c.content, b.name as box_name FROM cards c
-       JOIN boxes b ON b.id = c.box_id
-       WHERE c.id != ? ORDER BY c.updated_at DESC LIMIT 60`
-    ).all(card_id || 0);
+    const { data: allCards } = await supabase
+      .from('cards')
+      .select('id, title, content, boxes!inner(name)')
+      .neq('id', card_id || 0)
+      .order('updated_at', { ascending: false })
+      .limit(60);
 
-    if (allCards.length === 0) return res.json({ suggestions: [] });
+    if (!allCards?.length) return res.json({ suggestions: [] });
 
-    const cardList = allCards.map(c => `ID ${c.id} [${c.box_name}]: ${c.title} – ${c.content.slice(0, 80)}`).join('\n');
+    const cardList = allCards.map(c => `ID ${c.id} [${c.boxes.name}]: ${c.title} – ${c.content.slice(0, 80)}`).join('\n');
     const text = await callAI([{
       role: 'user',
       content: `Welche der folgenden Einträge sind thematisch verwandt mit dem aktuellen Eintrag? Antworte NUR mit einem JSON-Array der IDs, z.B. [2, 5]. Maximal 4 Vorschläge. Wenn keine passen, antworte mit [].
@@ -103,7 +101,9 @@ ${cardList}`
     }], 256);
 
     const ids = parseJSON(text);
-    const suggestions = allCards.filter(c => ids.includes(c.id)).map(c => ({ id: c.id, title: c.title, box_name: c.box_name }));
+    const suggestions = allCards
+      .filter(c => ids.includes(c.id))
+      .map(c => ({ id: c.id, title: c.title, box_name: c.boxes.name }));
     res.json({ suggestions });
   } catch (err) {
     console.error('[AI /suggest-links]', err.message);
@@ -114,12 +114,12 @@ ${cardList}`
 router.post('/quiz', async (req, res) => {
   try {
     const { card_id } = req.body;
-    const card = db.prepare('SELECT * FROM cards WHERE id = ?').get(card_id);
-    if (!card) return res.status(404).json({ error: 'Karte nicht gefunden' });
+    const { data: card, error } = await supabase.from('cards').select('*').eq('id', card_id).single();
+    if (error || !card) return res.status(404).json({ error: 'Karte nicht gefunden' });
 
-    const existing = db.prepare('SELECT question FROM card_questions WHERE card_id = ?').all(card_id);
+    const { data: existing } = await supabase.from('card_questions').select('question').eq('card_id', card_id);
     let questions;
-    if (existing.length > 0) {
+    if (existing?.length > 0) {
       questions = existing.map(q => q.question);
     } else {
       const text = await callAI([{
@@ -130,8 +130,7 @@ Titel: ${card.title}
 Inhalt: ${card.content}`
       }]);
       questions = parseJSON(text);
-      const insert = db.prepare('INSERT INTO card_questions (card_id, question) VALUES (?, ?)');
-      for (const q of questions) insert.run(card_id, q);
+      await supabase.from('card_questions').insert(questions.map(q => ({ card_id: Number(card_id), question: q })));
     }
     res.json({ card_id, title: card.title, questions });
   } catch (err) {
@@ -206,11 +205,10 @@ Antworte NUR mit einem JSON-Objekt:
     const entry = parseJSON(text);
 
     if (box_id) {
-      const result = db.prepare(
-        `INSERT INTO cards (box_id, title, content, tags, category) VALUES (?, ?, ?, ?, ?)`
-      ).run(box_id, entry.title, entry.content, JSON.stringify(entry.tags || []), entry.category || '');
-      entry.id = result.lastInsertRowid;
-      entry.box_id = box_id;
+      const { data } = await supabase.from('cards')
+        .insert({ box_id, title: entry.title, content: entry.content, tags: JSON.stringify(entry.tags || []), category: entry.category || '' })
+        .select().single();
+      if (data) { entry.id = data.id; entry.box_id = box_id; }
     }
 
     res.json(entry);

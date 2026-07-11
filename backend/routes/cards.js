@@ -1,142 +1,178 @@
 import { Router } from 'express';
-import db from '../database.js';
+import { supabase } from '../supabase.js';
+import { requireAuth } from '../middleware/auth.js';
 
 const router = Router();
+router.use(requireAuth);
 
-router.get('/all', (req, res) => {
-  const { search, topic, bereich } = req.query;
-  let query = `SELECT c.*, b.name as box_name, b.color as box_color, b.icon as box_icon, b.parent_id as box_parent_id
-               FROM cards c JOIN boxes b ON b.id = c.box_id WHERE 1=1`;
-  const params = [];
-  if (search) {
-    query += ` AND (c.title LIKE ? OR c.content LIKE ? OR c.tags LIKE ?)`;
-    params.push(`%${search}%`, `%${search}%`, `%${search}%`);
-  }
-  if (topic) {
-    query += ` AND c.box_id = ?`;
-    params.push(topic);
-  } else if (bereich) {
-    query += ` AND (c.box_id = ? OR b.parent_id = ?)`;
-    params.push(bereich, bereich);
-  }
-  query += ` ORDER BY c.updated_at DESC`;
-  const cards = db.prepare(query).all(...params).map(c => ({ ...c, tags: JSON.parse(c.tags || '[]') }));
-  res.json(cards);
+router.get('/all', async (req, res) => {
+  try {
+    const { search, topic, bereich } = req.query;
+    let query = supabase.from('cards').select('*, boxes!inner(name, color, icon, parent_id)').order('updated_at', { ascending: false });
+
+    if (search) {
+      query = query.or(`title.ilike.%${search}%,content.ilike.%${search}%,tags.ilike.%${search}%`);
+    }
+    if (topic) {
+      query = query.eq('box_id', topic);
+    } else if (bereich) {
+      const { data: children } = await supabase.from('boxes').select('id').eq('parent_id', bereich);
+      const childIds = (children || []).map(b => b.id);
+      const ids = [bereich, ...childIds];
+      query = query.in('box_id', ids);
+    }
+
+    const { data, error } = await query;
+    if (error) throw error;
+
+    const cards = data.map(c => ({
+      ...c,
+      box_name: c.boxes.name,
+      box_color: c.boxes.color,
+      box_icon: c.boxes.icon,
+      box_parent_id: c.boxes.parent_id,
+      boxes: undefined,
+      tags: JSON.parse(c.tags || '[]'),
+    }));
+    res.json(cards);
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-router.get('/box/:boxId', (req, res) => {
-  const { search, tag, category } = req.query;
-  let query = `SELECT c.*, GROUP_CONCAT(DISTINCT cq.question) as questions
-               FROM cards c
-               LEFT JOIN card_questions cq ON cq.card_id = c.id
-               WHERE c.box_id = ?`;
-  const params = [req.params.boxId];
+router.get('/box/:boxId', async (req, res) => {
+  try {
+    const { search, tag, category } = req.query;
+    let query = supabase.from('cards').select('*').eq('box_id', req.params.boxId).order('updated_at', { ascending: false });
 
-  if (search) {
-    query += ` AND (c.title LIKE ? OR c.content LIKE ? OR c.tags LIKE ?)`;
-    params.push(`%${search}%`, `%${search}%`, `%${search}%`);
-  }
-  if (tag) {
-    query += ` AND c.tags LIKE ?`;
-    params.push(`%${tag}%`);
-  }
-  if (category) {
-    query += ` AND c.category = ?`;
-    params.push(category);
-  }
-  query += ` GROUP BY c.id ORDER BY c.updated_at DESC`;
+    if (search) query = query.or(`title.ilike.%${search}%,content.ilike.%${search}%,tags.ilike.%${search}%`);
+    if (tag) query = query.ilike('tags', `%${tag}%`);
+    if (category) query = query.eq('category', category);
 
-  const cards = db.prepare(query).all(...params).map(c => ({
-    ...c,
-    tags: JSON.parse(c.tags || '[]'),
-    questions: c.questions ? c.questions.split(',') : []
-  }));
-  res.json(cards);
+    const { data: cards, error } = await query;
+    if (error) throw error;
+
+    const cardIds = cards.map(c => c.id);
+    const { data: questions } = await supabase.from('card_questions').select('card_id, question').in('card_id', cardIds);
+
+    const result = cards.map(c => ({
+      ...c,
+      tags: JSON.parse(c.tags || '[]'),
+      questions: (questions || []).filter(q => q.card_id === c.id).map(q => q.question),
+    }));
+    res.json(result);
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-router.get('/random/:boxId', (req, res) => {
-  const card = db.prepare(
-    `SELECT * FROM cards WHERE box_id = ? ORDER BY RANDOM() LIMIT 1`
-  ).get(req.params.boxId);
-  if (!card) return res.status(404).json({ error: 'Keine Karten vorhanden' });
-  card.tags = JSON.parse(card.tags || '[]');
-  const questions = db.prepare('SELECT question FROM card_questions WHERE card_id = ?').all(card.id);
-  card.questions = questions.map(q => q.question);
-  res.json(card);
+router.get('/random/:boxId', async (req, res) => {
+  try {
+    const { data: cards } = await supabase.from('cards').select('id').eq('box_id', req.params.boxId);
+    if (!cards?.length) return res.status(404).json({ error: 'Keine Karten vorhanden' });
+    const randomId = cards[Math.floor(Math.random() * cards.length)].id;
+
+    const { data: card, error } = await supabase.from('cards').select('*').eq('id', randomId).single();
+    if (error) throw error;
+    const { data: questions } = await supabase.from('card_questions').select('question').eq('card_id', card.id);
+    card.tags = JSON.parse(card.tags || '[]');
+    card.questions = (questions || []).map(q => q.question);
+    res.json(card);
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-router.get('/:id', (req, res) => {
-  const card = db.prepare('SELECT * FROM cards WHERE id = ?').get(req.params.id);
-  if (!card) return res.status(404).json({ error: 'Karte nicht gefunden' });
-  card.tags = JSON.parse(card.tags || '[]');
-  const questions = db.prepare('SELECT question FROM card_questions WHERE card_id = ?').all(card.id);
-  card.questions = questions.map(q => q.question);
-  const links = db.prepare(`
-    SELECT c.id, c.title, c.category FROM card_links cl
-    JOIN cards c ON c.id = cl.linked_card_id
-    WHERE cl.card_id = ?
-    UNION
-    SELECT c.id, c.title, c.category FROM card_links cl
-    JOIN cards c ON c.id = cl.card_id
-    WHERE cl.linked_card_id = ?
-  `).all(card.id, card.id);
-  card.links = links;
-  res.json(card);
+router.get('/:id', async (req, res) => {
+  try {
+    const { data: card, error } = await supabase.from('cards').select('*').eq('id', req.params.id).single();
+    if (error) return res.status(404).json({ error: 'Karte nicht gefunden' });
+
+    const { data: questions } = await supabase.from('card_questions').select('question').eq('card_id', card.id);
+
+    // Bidirektionale Links via UNION (beide Richtungen)
+    const { data: linksA } = await supabase.from('card_links')
+      .select('linked_card_id, cards!card_links_linked_card_id_fkey(id, title, category)')
+      .eq('card_id', req.params.id);
+    const { data: linksB } = await supabase.from('card_links')
+      .select('card_id, cards!card_links_card_id_fkey(id, title, category)')
+      .eq('linked_card_id', req.params.id);
+
+    const seen = new Set();
+    const links = [];
+    for (const l of (linksA || [])) {
+      const c = l.cards;
+      if (c && !seen.has(c.id)) { seen.add(c.id); links.push(c); }
+    }
+    for (const l of (linksB || [])) {
+      const c = l.cards;
+      if (c && !seen.has(c.id)) { seen.add(c.id); links.push(c); }
+    }
+
+    card.tags = JSON.parse(card.tags || '[]');
+    card.questions = (questions || []).map(q => q.question);
+    card.links = links;
+    res.json(card);
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
   const { box_id, title, content = '', tags = [], category = '' } = req.body;
   if (!box_id || !title) return res.status(400).json({ error: 'box_id und title erforderlich' });
-  const result = db.prepare(
-    `INSERT INTO cards (box_id, title, content, tags, category) VALUES (?, ?, ?, ?, ?)`
-  ).run(box_id, title, content, JSON.stringify(tags), category);
-  const card = db.prepare('SELECT * FROM cards WHERE id = ?').get(result.lastInsertRowid);
-  card.tags = JSON.parse(card.tags);
-  card.questions = [];
-  card.links = [];
-  res.status(201).json(card);
+  try {
+    const { data, error } = await supabase.from('cards')
+      .insert({ box_id, title, content, tags: JSON.stringify(tags), category })
+      .select().single();
+    if (error) throw error;
+    data.tags = JSON.parse(data.tags);
+    data.questions = [];
+    data.links = [];
+    res.status(201).json(data);
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-router.put('/:id', (req, res) => {
+router.put('/:id', async (req, res) => {
   const { title, content, tags, category, box_id } = req.body;
-  db.prepare(
-    `UPDATE cards SET title = COALESCE(?, title), content = COALESCE(?, content),
-     tags = COALESCE(?, tags), category = COALESCE(?, category),
-     box_id = COALESCE(?, box_id),
-     updated_at = CURRENT_TIMESTAMP WHERE id = ?`
-  ).run(title, content, tags ? JSON.stringify(tags) : null, category, box_id || null, req.params.id);
-  const card = db.prepare('SELECT * FROM cards WHERE id = ?').get(req.params.id);
-  card.tags = JSON.parse(card.tags || '[]');
-  res.json(card);
+  const updates = {};
+  if (title !== undefined) updates.title = title;
+  if (content !== undefined) updates.content = content;
+  if (tags !== undefined) updates.tags = JSON.stringify(tags);
+  if (category !== undefined) updates.category = category;
+  if (box_id !== undefined) updates.box_id = box_id;
+  try {
+    const { data, error } = await supabase.from('cards').update(updates).eq('id', req.params.id).select().single();
+    if (error) throw error;
+    data.tags = JSON.parse(data.tags || '[]');
+    res.json(data);
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-router.delete('/:id', (req, res) => {
-  db.prepare('DELETE FROM cards WHERE id = ?').run(req.params.id);
-  res.json({ ok: true });
+router.delete('/:id', async (req, res) => {
+  try {
+    await supabase.from('cards').delete().eq('id', req.params.id);
+    res.json({ ok: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-router.post('/:id/questions', (req, res) => {
+router.post('/:id/questions', async (req, res) => {
   const { questions } = req.body;
-  db.prepare('DELETE FROM card_questions WHERE card_id = ?').run(req.params.id);
-  const insert = db.prepare('INSERT INTO card_questions (card_id, question) VALUES (?, ?)');
-  for (const q of questions) insert.run(req.params.id, q);
-  res.json({ ok: true });
+  try {
+    await supabase.from('card_questions').delete().eq('card_id', req.params.id);
+    if (questions?.length) {
+      await supabase.from('card_questions').insert(questions.map(q => ({ card_id: Number(req.params.id), question: q })));
+    }
+    res.json({ ok: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-router.post('/link', (req, res) => {
+router.post('/link', async (req, res) => {
   const { card_id, linked_card_id } = req.body;
   try {
-    db.prepare('INSERT OR IGNORE INTO card_links (card_id, linked_card_id) VALUES (?, ?)').run(card_id, linked_card_id);
+    await supabase.from('card_links').upsert({ card_id, linked_card_id }, { onConflict: 'card_id,linked_card_id', ignoreDuplicates: true });
     res.json({ ok: true });
-  } catch {
-    res.status(400).json({ error: 'Link konnte nicht erstellt werden' });
-  }
+  } catch (e) { res.status(400).json({ error: 'Link konnte nicht erstellt werden' }); }
 });
 
-router.delete('/link/:cardId/:linkedId', (req, res) => {
-  db.prepare(`DELETE FROM card_links WHERE (card_id = ? AND linked_card_id = ?) OR (card_id = ? AND linked_card_id = ?)`
-  ).run(req.params.cardId, req.params.linkedId, req.params.linkedId, req.params.cardId);
-  res.json({ ok: true });
+router.delete('/link/:cardId/:linkedId', async (req, res) => {
+  try {
+    await supabase.from('card_links').delete()
+      .or(`and(card_id.eq.${req.params.cardId},linked_card_id.eq.${req.params.linkedId}),and(card_id.eq.${req.params.linkedId},linked_card_id.eq.${req.params.cardId})`);
+    res.json({ ok: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 export default router;

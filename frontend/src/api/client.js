@@ -1,10 +1,18 @@
-const BASE = '/api';
+import { supabase } from '../supabase.js';
+
+const BASE = import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api` : '/api';
 
 async function req(path, opts = {}) {
+  const { data: { session } } = await supabase.auth.getSession();
+  const token = session?.access_token;
+
   const res = await fetch(`${BASE}${path}`, {
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
     ...opts,
-    body: opts.body ? JSON.stringify(opts.body) : undefined
+    body: opts.body ? JSON.stringify(opts.body) : undefined,
   });
   if (!res.ok) throw new Error(await res.text());
   return res.json();
@@ -17,6 +25,7 @@ export const api = {
     findOrCreate: (name) => req('/boxes/find-or-create', { method: 'POST', body: { name } }),
     update: (id, data) => req(`/boxes/${id}`, { method: 'PUT', body: data }),
     delete: (id) => req(`/boxes/${id}`, { method: 'DELETE' }),
+    sort: (orders) => req('/boxes/sort', { method: 'PATCH', body: { orders } }),
   },
   cards: {
     all: (params = {}) => {
@@ -47,5 +56,5 @@ export const api = {
     suggestCategory: (data) => req('/ai/suggest-category', { method: 'POST', body: data }),
     suggestTags: (data) => req('/ai/suggest-tags', { method: 'POST', body: data }),
     generateEntry: (data) => req('/ai/generate-entry', { method: 'POST', body: data }),
-  }
+  },
 };
