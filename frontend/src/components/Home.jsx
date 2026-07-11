@@ -6,6 +6,7 @@ import { SortableContext, verticalListSortingStrategy, rectSortingStrategy, useS
 import { CSS } from '@dnd-kit/utilities';
 import ThemePicker from './ThemePicker.jsx';
 import ConfirmModal from './ConfirmModal.jsx';
+import { supabase } from '../supabase.js';
 
 const EMOJIS = [
   '🧬','🔬','🌿','🌊','⚗️','🌱','🦋','🌍','🌙','❄️',
@@ -376,6 +377,20 @@ export default function Home({ onOpenEntry, onStartReview, onShowImpressum }) {
               <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 3, fontStyle: 'italic', letterSpacing: '0.04em' }}>Lernen. Verstehen. Behalten.</p>
             </div>
             <ThemePicker />
+            <button
+              onClick={() => supabase.auth.signOut()}
+              title="Abmelden"
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                width: 34, height: 34, borderRadius: '50%',
+                border: '1px solid var(--border)', background: 'var(--surface)',
+                color: 'var(--text-muted)', transition: 'all 0.15s', fontSize: 15,
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'var(--surface2)'; e.currentTarget.style.borderColor = '#ef4444'; e.currentTarget.style.color = '#ef4444'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'var(--surface)'; e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-muted)'; }}
+            >
+              ⏻
+            </button>
           </>
         )}
       </div>
