@@ -1,0 +1,14 @@
+{
+  "appId": "de.stevenillg.meinwissen",
+  "appName": "Mein Wissen",
+  "webDir": "dist",
+  "plugins": {
+    "StatusBar": {
+      "style": "Dark",
+      "backgroundColor": "#111111"
+    },
+    "SplashScreen": {
+      "launchShowDuration": 0
+    }
+  }
+}

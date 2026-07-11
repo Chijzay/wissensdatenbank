@@ -29,6 +29,8 @@ Thumbs.db
 .vscode/
 .idea/
 
-# Capacitor (Android)
-android/
-ios/
+# Capacitor Android (nur Build-Outputs, nicht das Projekt selbst)
+frontend/android/.gradle/
+frontend/android/app/build/
+frontend/android/build/
+frontend/.env.android
