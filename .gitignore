@@ -1,0 +1,33 @@
+# Dependencies
+node_modules/
+backend/node_modules/
+frontend/node_modules/
+
+# Environment variables (NEVER committen!)
+.env
+backend/.env
+
+# Database (bleibt lokal / wird durch Supabase ersetzt)
+backend/wissen.db
+backend/wissen.db-shm
+backend/wissen.db-wal
+
+# Build-Ausgabe
+frontend/dist/
+frontend/build/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Capacitor (Android)
+android/
+ios/
