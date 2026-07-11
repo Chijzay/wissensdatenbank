@@ -1,60 +1,223 @@
 import { supabase } from '../supabase.js';
 
-const BASE = import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api` : '/api';
+const AUTO_COLORS = ['#6366f1','#22c55e','#f59e0b','#ec4899','#14b8a6','#f97316','#8b5cf6','#06b6d4'];
 
-async function req(path, opts = {}) {
-  const { data: { session } } = await supabase.auth.getSession();
-  const token = session?.access_token;
+function parseTags(tags) {
+  if (Array.isArray(tags)) return tags;
+  try { return JSON.parse(tags || '[]'); } catch { return []; }
+}
 
-  const res = await fetch(`${BASE}${path}`, {
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-    ...opts,
-    body: opts.body ? JSON.stringify(opts.body) : undefined,
+async function ai(action, data = {}) {
+  const { data: result, error } = await supabase.functions.invoke('ai', {
+    body: { action, ...data },
   });
-  if (!res.ok) throw new Error(await res.text());
-  return res.json();
+  if (error) throw new Error(error.message || JSON.stringify(error));
+  return result;
 }
 
 export const api = {
   boxes: {
-    list: () => req('/boxes'),
-    create: (data) => req('/boxes', { method: 'POST', body: data }),
-    findOrCreate: (name) => req('/boxes/find-or-create', { method: 'POST', body: { name } }),
-    update: (id, data) => req(`/boxes/${id}`, { method: 'PUT', body: data }),
-    delete: (id) => req(`/boxes/${id}`, { method: 'DELETE' }),
-    sort: (orders) => req('/boxes/sort', { method: 'PATCH', body: { orders } }),
+    list: async () => {
+      const { data: boxes, error: bErr } = await supabase.from('boxes').select('*').order('sort_order').order('created_at');
+      if (bErr) throw bErr;
+      const { data: cards, error: cErr } = await supabase.from('cards').select('id, box_id');
+      if (cErr) throw cErr;
+
+      const result = boxes.map(b => {
+        const directCount = cards.filter(c => c.box_id === b.id).length;
+        const childIds = boxes.filter(c => c.parent_id === b.id).map(c => c.id);
+        const childEntryCount = cards.filter(c => childIds.includes(c.box_id)).length;
+        return {
+          ...b,
+          direct_count: directCount,
+          children_entry_count: childEntryCount,
+          children_count: childIds.length,
+          card_count: directCount + (b.parent_id ? 0 : childEntryCount),
+        };
+      });
+
+      result.sort((a, b) => {
+        if ((a.parent_id || 0) !== (b.parent_id || 0)) return (a.parent_id || 0) - (b.parent_id || 0);
+        if (a.sort_order !== b.sort_order) return a.sort_order - b.sort_order;
+        return new Date(a.created_at) - new Date(b.created_at);
+      });
+
+      return result;
+    },
+
+    create: async (data) => {
+      const { name, description = '', color = '#6366f1', icon = '📦', parent_id = null } = data;
+      const { data: box, error } = await supabase.from('boxes')
+        .insert({ name, description, color, icon, parent_id: parent_id || null })
+        .select().single();
+      if (error) throw error;
+      return box;
+    },
+
+    findOrCreate: async (name) => {
+      const { data: existing } = await supabase.from('boxes').select('*')
+        .ilike('name', name.trim()).is('parent_id', null).maybeSingle();
+      if (existing) return existing;
+
+      const { data: all } = await supabase.from('boxes').select('id');
+      const color = AUTO_COLORS[(all?.length || 0) % AUTO_COLORS.length];
+      const { data, error } = await supabase.from('boxes')
+        .insert({ name: name.trim(), color, icon: '📁', parent_id: null })
+        .select().single();
+      if (error) throw error;
+      return data;
+    },
+
+    update: async (id, data) => {
+      const { data: box, error } = await supabase.from('boxes').update(data).eq('id', id).select().single();
+      if (error) throw error;
+      return box;
+    },
+
+    delete: async (id) => {
+      await supabase.from('boxes').delete().eq('parent_id', id);
+      await supabase.from('boxes').delete().eq('id', id);
+      return { ok: true };
+    },
+
+    sort: async (orders) => {
+      await Promise.all(orders.map(({ id, sort_order }) =>
+        supabase.from('boxes').update({ sort_order }).eq('id', id)
+      ));
+      return { ok: true };
+    },
   },
+
   cards: {
-    all: (params = {}) => {
-      const qs = new URLSearchParams(params).toString();
-      return req(`/cards/all${qs ? '?' + qs : ''}`);
+    all: async (params = {}) => {
+      const { search, topic, bereich } = params;
+      let query = supabase.from('cards')
+        .select('*, boxes!inner(name, color, icon, parent_id)')
+        .order('updated_at', { ascending: false });
+
+      if (search) query = query.or(`title.ilike.%${search}%,content.ilike.%${search}%,tags.ilike.%${search}%`);
+      if (topic) {
+        query = query.eq('box_id', topic);
+      } else if (bereich) {
+        const { data: children } = await supabase.from('boxes').select('id').eq('parent_id', bereich);
+        const ids = [bereich, ...(children || []).map(b => b.id)];
+        query = query.in('box_id', ids);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+      return data.map(c => ({
+        ...c,
+        box_name: c.boxes.name,
+        box_color: c.boxes.color,
+        box_icon: c.boxes.icon,
+        box_parent_id: c.boxes.parent_id,
+        boxes: undefined,
+        tags: parseTags(c.tags),
+      }));
     },
-    allInBereich: (bereichId, extra = {}) => {
-      const qs = new URLSearchParams({ bereich: bereichId, ...extra }).toString();
-      return req(`/cards/all?${qs}`);
+
+    allInBereich: (bereichId, extra = {}) => api.cards.all({ bereich: bereichId, ...extra }),
+
+    list: async (boxId, params = {}) => {
+      const { search, tag, category } = params;
+      let query = supabase.from('cards').select('*').eq('box_id', boxId).order('updated_at', { ascending: false });
+      if (search) query = query.or(`title.ilike.%${search}%,content.ilike.%${search}%,tags.ilike.%${search}%`);
+      if (tag) query = query.ilike('tags', `%${tag}%`);
+      if (category) query = query.eq('category', category);
+
+      const { data: cards, error } = await query;
+      if (error) throw error;
+
+      const cardIds = cards.map(c => c.id);
+      const { data: questions } = cardIds.length
+        ? await supabase.from('card_questions').select('card_id, question').in('card_id', cardIds)
+        : { data: [] };
+
+      return cards.map(c => ({
+        ...c,
+        tags: parseTags(c.tags),
+        questions: (questions || []).filter(q => q.card_id === c.id).map(q => q.question),
+      }));
     },
-    list: (boxId, params = {}) => {
-      const qs = new URLSearchParams(params).toString();
-      return req(`/cards/box/${boxId}${qs ? '?' + qs : ''}`);
+
+    get: async (id) => {
+      const { data: card, error } = await supabase.from('cards').select('*').eq('id', id).single();
+      if (error) throw error;
+
+      const [{ data: questions }, { data: linksA }, { data: linksB }] = await Promise.all([
+        supabase.from('card_questions').select('question').eq('card_id', id),
+        supabase.from('card_links').select('linked_card_id, cards!card_links_linked_card_id_fkey(id, title, category)').eq('card_id', id),
+        supabase.from('card_links').select('card_id, cards!card_links_card_id_fkey(id, title, category)').eq('linked_card_id', id),
+      ]);
+
+      const seen = new Set();
+      const links = [];
+      for (const l of [...(linksA || []), ...(linksB || [])]) {
+        const c = l.cards;
+        if (c && !seen.has(c.id)) { seen.add(c.id); links.push(c); }
+      }
+
+      return { ...card, tags: parseTags(card.tags), questions: (questions || []).map(q => q.question), links };
     },
-    get: (id) => req(`/cards/${id}`),
-    random: (boxId) => req(`/cards/random/${boxId}`),
-    create: (data) => req('/cards', { method: 'POST', body: data }),
-    update: (id, data) => req(`/cards/${id}`, { method: 'PUT', body: data }),
-    delete: (id) => req(`/cards/${id}`, { method: 'DELETE' }),
-    link: (card_id, linked_card_id) => req('/cards/link', { method: 'POST', body: { card_id, linked_card_id } }),
-    unlink: (cardId, linkedId) => req(`/cards/link/${cardId}/${linkedId}`, { method: 'DELETE' }),
+
+    random: async (boxId) => {
+      const { data: cards } = await supabase.from('cards').select('id').eq('box_id', boxId);
+      if (!cards?.length) throw new Error('Keine Karten vorhanden');
+      const randomId = cards[Math.floor(Math.random() * cards.length)].id;
+      const { data: card, error } = await supabase.from('cards').select('*').eq('id', randomId).single();
+      if (error) throw error;
+      const { data: questions } = await supabase.from('card_questions').select('question').eq('card_id', card.id);
+      card.tags = parseTags(card.tags);
+      card.questions = (questions || []).map(q => q.question);
+      return card;
+    },
+
+    create: async (data) => {
+      const { box_id, title, content = '', tags = [], category = '' } = data;
+      const { data: card, error } = await supabase.from('cards')
+        .insert({ box_id, title, content, tags: JSON.stringify(tags), category })
+        .select().single();
+      if (error) throw error;
+      return { ...card, tags: parseTags(card.tags), questions: [], links: [] };
+    },
+
+    update: async (id, data) => {
+      const updates = { ...data };
+      if (data.tags !== undefined) updates.tags = JSON.stringify(data.tags);
+      const { data: card, error } = await supabase.from('cards').update(updates).eq('id', id).select().single();
+      if (error) throw error;
+      return { ...card, tags: parseTags(card.tags) };
+    },
+
+    delete: async (id) => {
+      await supabase.from('cards').delete().eq('id', id);
+      return { ok: true };
+    },
+
+    link: async (card_id, linked_card_id) => {
+      await supabase.from('card_links').upsert(
+        { card_id, linked_card_id },
+        { onConflict: 'card_id,linked_card_id', ignoreDuplicates: true }
+      );
+      return { ok: true };
+    },
+
+    unlink: async (cardId, linkedId) => {
+      await supabase.from('card_links').delete().or(
+        `and(card_id.eq.${cardId},linked_card_id.eq.${linkedId}),and(card_id.eq.${linkedId},linked_card_id.eq.${cardId})`
+      );
+      return { ok: true };
+    },
   },
+
   ai: {
-    generateQuestions: (data) => req('/ai/generate-questions', { method: 'POST', body: data }),
-    suggestLinks: (data) => req('/ai/suggest-links', { method: 'POST', body: data }),
-    quiz: (card_id) => req('/ai/quiz', { method: 'POST', body: { card_id } }),
-    checkAnswer: (data) => req('/ai/check-answer', { method: 'POST', body: data }),
-    suggestCategory: (data) => req('/ai/suggest-category', { method: 'POST', body: data }),
-    suggestTags: (data) => req('/ai/suggest-tags', { method: 'POST', body: data }),
-    generateEntry: (data) => req('/ai/generate-entry', { method: 'POST', body: data }),
+    generateQuestions: (data) => ai('generate-questions', data),
+    suggestLinks:      (data) => ai('suggest-links', data),
+    quiz:              (card_id) => ai('quiz', { card_id }),
+    checkAnswer:       (data) => ai('check-answer', data),
+    suggestCategory:   (data) => ai('suggest-category', data),
+    suggestTags:       (data) => ai('suggest-tags', data),
+    generateEntry:     (data) => ai('generate-entry', data),
   },
 };
