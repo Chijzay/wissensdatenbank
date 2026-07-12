@@ -86,6 +86,8 @@ export default function Home({ onOpenEntry, onStartReview, onShowImpressum, onSh
 
   const [showAll, setShowAll] = useState(false);
   const FEED_LIMIT = 6;
+  const [showAllBereiche, setShowAllBereiche] = useState(false);
+  const BEREICHE_LIMIT = 5;
 
   const [confirmPending, setConfirmPending] = useState(null); // { message, onConfirm }
   const [editingBoxId, setEditingBoxId] = useState(null);
@@ -790,10 +792,14 @@ export default function Home({ onOpenEntry, onStartReview, onShowImpressum, onSh
             </DndContext>
           ) : (<>
             {/* Bereich-Accordion mit Drag-and-Drop */}
+            {(() => {
+              const visibleBereiche = showAllBereiche ? tree : tree.slice(0, BEREICHE_LIMIT);
+              const hiddenCount = tree.length - BEREICHE_LIMIT;
+              return (<>
             <DndContext sensors={dndSensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-              <SortableContext items={tree.map(b => b.id)} strategy={verticalListSortingStrategy}>
+              <SortableContext items={visibleBereiche.map(b => b.id)} strategy={verticalListSortingStrategy}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {tree.map(bereich => {
+              {visibleBereiche.map(bereich => {
                 const isExpanded = expanded.has(bereich.id);
                 const isActive = activeBereich?.id === bereich.id;
                 const hasChildren = bereich.children?.length > 0;
@@ -907,6 +913,31 @@ export default function Home({ onOpenEntry, onStartReview, onShowImpressum, onSh
                 </div>
               </SortableContext>
             </DndContext>
+
+            {/* Mehr / Weniger Bereiche */}
+            {hiddenCount > 0 && !showAllBereiche && (
+              <button onClick={() => setShowAllBereiche(true)}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                  width: '100%', padding: '9px', borderRadius: 10,
+                  border: '1px solid var(--border)', background: 'var(--surface)',
+                  color: 'var(--text-muted)', fontSize: 13, marginTop: 4 }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.color = 'var(--accent)'; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-muted)'; }}>
+                <ChevronDown size={14} /> {hiddenCount} weitere Bereiche anzeigen
+              </button>
+            )}
+            {showAllBereiche && tree.length > BEREICHE_LIMIT && (
+              <button onClick={() => setShowAllBereiche(false)}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                  width: '100%', padding: '9px', borderRadius: 10,
+                  border: '1px solid var(--border)', background: 'var(--surface)',
+                  color: 'var(--text-muted)', fontSize: 13, marginTop: 4 }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-muted)'; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-muted)'; }}>
+                <ChevronRight size={14} style={{ transform: 'rotate(-90deg)' }} /> Weniger anzeigen
+              </button>
+            )}
+            </>); })()}
               {/* Neuen Bereich anlegen */}
               <div style={{ marginTop: 16 }}>
                 {creating?.parentId === null ? (
