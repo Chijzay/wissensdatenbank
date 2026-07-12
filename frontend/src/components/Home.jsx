@@ -257,22 +257,8 @@ export default function Home({ onOpenEntry, onStartReview, onShowImpressum, onSh
     return n;
   });
 
-  const handleBereichClick = (bereich) => {
-    if (bereichClickTimers.current[bereich.id]) {
-      // Doppelklick → in Bereich navigieren
-      clearTimeout(bereichClickTimers.current[bereich.id]);
-      delete bereichClickTimers.current[bereich.id];
-      navigateToBereich(bereich);
-      return;
-    }
-
-    // Einfacher Klick: sofort als Speicherziel aus-/abwählen (kein Expand)
+  const handleBereichSelect = (bereich) => {
     setSaveToBox(prev => prev?.id === bereich.id ? null : bereich);
-
-    // Zeitfenster für Doppelklick-Erkennung
-    bereichClickTimers.current[bereich.id] = setTimeout(() => {
-      delete bereichClickTimers.current[bereich.id];
-    }, 350);
   };
 
   const [micError, setMicError] = useState('');
@@ -392,7 +378,6 @@ export default function Home({ onOpenEntry, onStartReview, onShowImpressum, onSh
 
   const navigateToBereich = (b) => {
     setActiveBereich(b); setActiveBox(null);
-    if (!expanded.has(b.id)) setExpanded(prev => new Set([...prev, b.id]));
   };
   const navigateToBox = (box, bereich) => {
     setActiveBox(box); setActiveBereich(bereich); setSaveToBox(box);
@@ -735,7 +720,7 @@ export default function Home({ onOpenEntry, onStartReview, onShowImpressum, onSh
                   <div
                     onMouseEnter={() => setHoveredBereichId(bereich.id)}
                     onMouseLeave={() => setHoveredBereichId(null)}
-                    style={{ background: isSelected ? bereich.color + '11' : 'var(--surface)', border: `1px solid ${isActive || isSelected ? bereich.color : editingBoxId === bereich.id ? 'var(--accent)' : 'var(--border)'}`, borderRadius: 14, overflow: 'hidden', transition: 'all 0.2s', transform: isSelected ? 'translateY(-1px)' : 'none', boxShadow: isSelected ? `0 0 0 2px ${bereich.color}33` : 'none' }}>
+                    style={{ background: isSelected ? bereich.color + '11' : 'var(--surface)', border: `2px solid ${isSelected ? bereich.color : isActive ? bereich.color + '88' : editingBoxId === bereich.id ? 'var(--accent)' : 'var(--border)'}`, borderRadius: 14, overflow: 'hidden', transition: 'border-color 0.15s, background 0.15s' }}>
                     {editingBoxId === bereich.id ? (
                       <div style={{ padding: '14px 16px', borderLeft: `4px solid var(--accent)` }}>
                         <EditBoxForm box={bereich} onSave={saveBoxEdit} onCancel={() => setEditingBoxId(null)} />
@@ -744,7 +729,8 @@ export default function Home({ onOpenEntry, onStartReview, onShowImpressum, onSh
                     {/* Bereich-Header */}
                     <div style={{ display: 'flex', alignItems: 'center', padding: '12px 16px', borderLeft: `4px solid ${bereich.color}` }}>
                       <button
-                        onClick={() => handleBereichClick(bereich)}
+                        onClick={() => handleBereichSelect(bereich)}
+                        onDoubleClick={() => navigateToBereich(bereich)}
                         onTouchStart={() => {
                           bereichLongPressed.current[bereich.id] = false;
                           bereichTouchTimers.current[bereich.id] = setTimeout(() => {
@@ -790,12 +776,7 @@ export default function Home({ onOpenEntry, onStartReview, onShowImpressum, onSh
                           onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.opacity = '0.4'; }}>
                           <Trash2 size={13} />
                         </button>
-                        <button onClick={e => {
-                            e.stopPropagation();
-                            clearTimeout(bereichClickTimers.current[bereich.id]);
-                            delete bereichClickTimers.current[bereich.id];
-                            toggleExpand(bereich.id);
-                          }}
+                        <button onClick={e => { e.stopPropagation(); toggleExpand(bereich.id); }}
                           style={{ padding: 6, borderRadius: 6, color: 'var(--text-muted)', transition: 'transform 0.2s', transform: isExpanded ? 'rotate(90deg)' : 'none' }}>
                           <ChevronRight size={16} />
                         </button>
