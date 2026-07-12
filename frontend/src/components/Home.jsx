@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Mic, MicOff, Send, Search, X, Plus, ArrowLeft, ChevronRight, ChevronDown, Trash2, Sparkles, Shuffle, GraduationCap, GripVertical, LogOut } from 'lucide-react';
+import { Mic, MicOff, Send, Search, X, Plus, ArrowLeft, ChevronRight, ChevronDown, Trash2, Sparkles, Shuffle, GraduationCap, GripVertical, LogOut, Pencil } from 'lucide-react';
 import { api } from '../api/client.js';
 import { DndContext, closestCenter, PointerSensor, TouchSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, rectSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable';
@@ -86,6 +86,8 @@ export default function Home({ onOpenEntry, onStartReview, onShowImpressum, onSh
   const FEED_LIMIT = 6;
 
   const [confirmPending, setConfirmPending] = useState(null); // { message, onConfirm }
+  const [editingBoxId, setEditingBoxId] = useState(null);
+  const [hoveredBereichId, setHoveredBereichId] = useState(null);
 
   // Neue Box / Bereich erstellen
   const [creating, setCreating] = useState(null); // null | { parentId: null|number }
@@ -277,7 +279,7 @@ export default function Home({ onOpenEntry, onStartReview, onShowImpressum, onSh
           // Hat Sub-Boxen, nichts in Eingabe: auf-/zuklappen
           toggleExpand(bereich.id);
         }
-      }, 380);
+      }, 250);
     }
   };
 
@@ -379,6 +381,12 @@ export default function Home({ onOpenEntry, onStartReview, onShowImpressum, onSh
     await api.cards.create({ box_id: box.id, title: aiPreview.title, content: aiPreview.content, tags: aiPreview.tags || [], category: aiPreview.category || '' });
     setAiPreview(null); setAiTopic(''); setShowAiGen(false);
     await loadEntries();
+  };
+
+  const saveBoxEdit = async ({ name, icon, color }) => {
+    await api.boxes.update(editingBoxId, { name, icon, color });
+    setEditingBoxId(null);
+    await loadBoxes();
   };
 
   const formatDate = iso => {
@@ -697,13 +705,18 @@ export default function Home({ onOpenEntry, onStartReview, onShowImpressum, onSh
                   {allBoxes.filter(b => b.parent_id === activeBereich.id).map(box => (
                     <SortableBoxCard key={box.id} id={box.id}>
                       {({ gripRef, gripProps }) => (
-                        <BoxCard box={box}
-                          selected={saveToBox?.id === box.id}
-                          onSelect={() => setSaveToBox(saveToBox?.id === box.id ? null : box)}
-                          onNavigate={() => navigateToBox(box, activeBereich)}
-                          onDelete={deleteBox}
-                          gripRef={gripRef}
-                          gripProps={gripProps} />
+                        editingBoxId === box.id ? (
+                          <EditBoxForm box={box} onSave={saveBoxEdit} onCancel={() => setEditingBoxId(null)} />
+                        ) : (
+                          <BoxCard box={box}
+                            selected={saveToBox?.id === box.id}
+                            onSelect={() => setSaveToBox(saveToBox?.id === box.id ? null : box)}
+                            onNavigate={() => navigateToBox(box, activeBereich)}
+                            onDelete={deleteBox}
+                            onEdit={() => setEditingBoxId(box.id)}
+                            gripRef={gripRef}
+                            gripProps={gripProps} />
+                        )
                       )}
                     </SortableBoxCard>
                   ))}
@@ -727,7 +740,15 @@ export default function Home({ onOpenEntry, onStartReview, onShowImpressum, onSh
                 return (
                   <SortableBereichItem key={bereich.id} id={bereich.id}>
                     {({ gripRef, gripProps }) => (
-                  <div style={{ background: isSelected ? bereich.color + '11' : 'var(--surface)', border: `1px solid ${isActive || isSelected ? bereich.color : 'var(--border)'}`, borderRadius: 14, overflow: 'hidden', transition: 'all 0.2s', transform: isSelected ? 'translateY(-1px)' : 'none', boxShadow: isSelected ? `0 0 0 2px ${bereich.color}33` : 'none' }}>
+                  <div
+                    onMouseEnter={() => setHoveredBereichId(bereich.id)}
+                    onMouseLeave={() => setHoveredBereichId(null)}
+                    style={{ background: isSelected ? bereich.color + '11' : 'var(--surface)', border: `1px solid ${isActive || isSelected ? bereich.color : editingBoxId === bereich.id ? 'var(--accent)' : 'var(--border)'}`, borderRadius: 14, overflow: 'hidden', transition: 'all 0.2s', transform: isSelected ? 'translateY(-1px)' : 'none', boxShadow: isSelected ? `0 0 0 2px ${bereich.color}33` : 'none' }}>
+                    {editingBoxId === bereich.id ? (
+                      <div style={{ padding: '14px 16px', borderLeft: `4px solid var(--accent)` }}>
+                        <EditBoxForm box={bereich} onSave={saveBoxEdit} onCancel={() => setEditingBoxId(null)} />
+                      </div>
+                    ) : (<>
                     {/* Bereich-Header */}
                     <div style={{ display: 'flex', alignItems: 'center', padding: '12px 16px', borderLeft: `4px solid ${bereich.color}` }}>
                       <button
@@ -762,6 +783,15 @@ export default function Home({ onOpenEntry, onStartReview, onShowImpressum, onSh
                           onMouseLeave={e => e.currentTarget.style.opacity = '0.35'}>
                           <GripVertical size={15} />
                         </button>
+                        {hoveredBereichId === bereich.id && (
+                          <button onClick={e => { e.stopPropagation(); setEditingBoxId(bereich.id); }}
+                            style={{ padding: 6, borderRadius: 6, color: 'var(--text-muted)', opacity: 0.5, transition: 'all 0.15s' }}
+                            title="Umbenennen"
+                            onMouseEnter={e => { e.currentTarget.style.color = 'var(--accent)'; e.currentTarget.style.opacity = '1'; }}
+                            onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.opacity = '0.5'; }}>
+                            <Pencil size={13} />
+                          </button>
+                        )}
                         <button onClick={e => deleteBox(e, bereich)}
                           style={{ padding: 6, borderRadius: 6, color: 'var(--text-muted)', opacity: 0.4, transition: 'all 0.15s' }}
                           onMouseEnter={e => { e.currentTarget.style.color = 'var(--danger)'; e.currentTarget.style.opacity = '1'; }}
@@ -788,13 +818,18 @@ export default function Home({ onOpenEntry, onStartReview, onShowImpressum, onSh
                             {(bereich.children || []).map(box => (
                               <SortableBoxCard key={box.id} id={box.id}>
                                 {({ gripRef, gripProps }) => (
-                                  <BoxCard box={box} small
-                                    selected={saveToBox?.id === box.id}
-                                    onSelect={() => setSaveToBox(saveToBox?.id === box.id ? null : box)}
-                                    onNavigate={() => navigateToBox(box, bereich)}
-                                    onDelete={deleteBox}
-                                    gripRef={gripRef}
-                                    gripProps={gripProps} />
+                                  editingBoxId === box.id ? (
+                                    <EditBoxForm box={box} onSave={saveBoxEdit} onCancel={() => setEditingBoxId(null)} />
+                                  ) : (
+                                    <BoxCard box={box} small
+                                      selected={saveToBox?.id === box.id}
+                                      onSelect={() => setSaveToBox(saveToBox?.id === box.id ? null : box)}
+                                      onNavigate={() => navigateToBox(box, bereich)}
+                                      onDelete={deleteBox}
+                                      onEdit={() => setEditingBoxId(box.id)}
+                                      gripRef={gripRef}
+                                      gripProps={gripProps} />
+                                  )
                                 )}
                               </SortableBoxCard>
                             ))}
@@ -806,6 +841,7 @@ export default function Home({ onOpenEntry, onStartReview, onShowImpressum, onSh
                         </SortableContext>
                       </DndContext>
                     )}
+                  </>)}
                   </div>
                   )}
                   </SortableBereichItem>
@@ -923,14 +959,12 @@ export default function Home({ onOpenEntry, onStartReview, onShowImpressum, onSh
   );
 }
 
-function BoxCard({ box, small, selected, onSelect, onNavigate, onDelete, gripRef, gripProps }) {
+function BoxCard({ box, small, selected, onSelect, onNavigate, onDelete, onEdit, gripRef, gripProps }) {
   const [hovered, setHovered] = useState(false);
   const touchTimer = useRef(null);
   const longPressed = useRef(false);
   const clickTimer = useRef(null);
 
-  // Doppelklick per Timer: erster Klick wartet 380ms auf zweiten.
-  // Zweiter Klick innerhalb 380ms → navigieren (ohne Layout-Shift dazwischen).
   const handleClick = () => {
     if (clickTimer.current) {
       clearTimeout(clickTimer.current);
@@ -940,7 +974,7 @@ function BoxCard({ box, small, selected, onSelect, onNavigate, onDelete, gripRef
       clickTimer.current = setTimeout(() => {
         clickTimer.current = null;
         onSelect();
-      }, 380);
+      }, 250);
     }
   };
 
@@ -982,7 +1016,15 @@ function BoxCard({ box, small, selected, onSelect, onNavigate, onDelete, gripRef
           {selected ? '✓ ausgewählt' : `${box.card_count ?? 0} Einträge`}
         </div>
       </button>
-      {/* Löschen-Button (nur beim Hovern) */}
+      {/* Bearbeiten- und Löschen-Button (nur beim Hovern) */}
+      {hovered && onEdit && (
+        <button onClick={e => { e.stopPropagation(); onEdit(); }} title="Umbenennen"
+          style={{ position: 'absolute', top: 6, right: 26, zIndex: 2, padding: 3, borderRadius: 5, color: 'var(--text-muted)' }}
+          onMouseEnter={e => e.currentTarget.style.color = 'var(--accent)'}
+          onMouseLeave={e => e.currentTarget.style.color = 'var(--text-muted)'}>
+          <Pencil size={11} />
+        </button>
+      )}
       {hovered && (
         <button onClick={e => onDelete(e, box)} title="Löschen"
           style={{ position: 'absolute', top: 6, right: 6, zIndex: 2, padding: 3, borderRadius: 5, color: 'var(--text-muted)' }}
@@ -1014,6 +1056,39 @@ function NewBoxButton({ small, onClick }) {
       onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-muted)'; }}>
       <Plus size={18} /> Box
     </button>
+  );
+}
+
+function EditBoxForm({ box, onSave, onCancel }) {
+  const [name, setName] = useState(box.name || '');
+  const [icon, setIcon] = useState(box.icon || '📁');
+  const [color, setColor] = useState(box.color || AUTO_COLORS[0]);
+  const handleSave = () => { if (name.trim()) onSave({ name: name.trim(), icon, color }); };
+  return (
+    <div style={{ background: 'var(--surface2)', border: '1px solid var(--accent)', borderRadius: 10, padding: '12px' }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3, marginBottom: 8, maxHeight: 96, overflowY: 'auto' }}>
+        {EMOJIS.map(em => (
+          <button key={em} onClick={() => setIcon(em)}
+            style={{ fontSize: 16, padding: 2, borderRadius: 5, background: icon === em ? 'var(--surface)' : 'none', border: icon === em ? '1px solid var(--accent)' : '1px solid transparent' }}>
+            {em}
+          </button>
+        ))}
+      </div>
+      <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginBottom: 8 }}>
+        {AUTO_COLORS.map(c => (
+          <button key={c} onClick={() => setColor(c)}
+            style={{ width: 18, height: 18, borderRadius: '50%', background: c, border: color === c ? '2px solid white' : '2px solid transparent', outline: color === c ? `2px solid ${c}` : 'none' }} />
+        ))}
+      </div>
+      <input value={name} onChange={e => setName(e.target.value)}
+        onKeyDown={e => { if (e.key === 'Enter') handleSave(); if (e.key === 'Escape') onCancel(); }}
+        placeholder="Name…" autoFocus
+        style={{ width: '100%', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 7, padding: '6px 9px', fontSize: 13, marginBottom: 8 }} />
+      <div style={{ display: 'flex', gap: 6 }}>
+        <button onClick={handleSave} style={{ flex: 1, padding: '6px', borderRadius: 7, background: 'var(--accent)', color: 'white', fontSize: 13, fontWeight: 600 }}>Speichern</button>
+        <button onClick={onCancel} style={{ padding: '6px 10px', borderRadius: 7, border: '1px solid var(--border)', color: 'var(--text-muted)', fontSize: 13 }}>✕</button>
+      </div>
+    </div>
   );
 }
 
