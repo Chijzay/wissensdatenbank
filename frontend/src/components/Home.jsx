@@ -541,24 +541,25 @@ export default function Home({ onOpenEntry, onStartReview, onShowImpressum, onSh
               : null;
             return (
               <>
-                {(micError || saveError) && (
+                {(micError || (saveError && saveError !== 'aborted')) && (
                   <div style={{ marginBottom: 8 }}>
-                    {saveError && <div style={{ fontSize: 12, color: 'var(--danger)', marginBottom: 4 }}>{saveError}</div>}
+                    {saveError && saveError !== 'aborted' && <div style={{ fontSize: 12, color: 'var(--danger)', marginBottom: 4, padding: '6px 10px', background: '#ef444418', borderRadius: 8 }}>{saveError}</div>}
                     {micError && <div style={{ fontSize: 12, color: 'var(--danger)', padding: '6px 10px', background: '#ef444418', borderRadius: 8 }}>{micError}</div>}
                   </div>
                 )}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  {/* Diktieren */}
+                {/* Mobile: Dropdown oben (volle Breite), Buttons darunter. Desktop: alles in einer Zeile */}
+                <div style={{ display: 'flex', flexWrap: isMobile ? 'wrap' : 'nowrap', alignItems: 'center', gap: 8, justifyContent: 'space-between' }}>
+                  {/* Diktieren — mobile: zweite Zeile links */}
                   <button
                     className={recording ? 'mic-recording' : ''}
                     onMouseDown={startRecording} onMouseUp={stopRecording}
                     onMouseLeave={stopRecording} onTouchStart={startRecording} onTouchEnd={stopRecording}
-                    style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 13px', borderRadius: 8, border: '1px solid var(--border)', fontSize: 13, color: 'var(--text-muted)', flexShrink: 0, userSelect: 'none', WebkitUserSelect: 'none' }}>
+                    style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 13px', borderRadius: 8, border: '1px solid var(--border)', fontSize: 13, color: 'var(--text-muted)', flexShrink: 0, order: isMobile ? 2 : 1, userSelect: 'none', WebkitUserSelect: 'none' }}>
                     {recording ? <><MicOff size={14} /> Sprechen…</> : <><Mic size={14} /> Diktieren</>}
                   </button>
 
-                  {/* Bereich-Dropdown — immer sichtbar, kein Layout-Shift */}
-                  <div ref={boxDropdownRef} style={{ position: 'relative', flex: 1 }}>
+                  {/* Bereich-Dropdown — mobile: erste Zeile volle Breite */}
+                  <div ref={boxDropdownRef} style={{ position: 'relative', flex: 1, order: isMobile ? 1 : 2, ...(isMobile ? { flexBasis: '100%' } : {}) }}>
                     <button
                       onClick={() => { setBoxDropdownOpen(v => !v); setBoxSearch(''); }}
                       style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 6, padding: '7px 11px', borderRadius: 8,
@@ -628,9 +629,9 @@ export default function Home({ onOpenEntry, onStartReview, onShowImpressum, onSh
                     )}
                   </div>
 
-                  {/* Speichern */}
+                  {/* Speichern — mobile: zweite Zeile rechts */}
                   <button className="capture-save-btn" onClick={save} disabled={!content.trim() || saving}
-                    style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 18px', borderRadius: 10, fontWeight: 700, fontSize: 15, transition: 'all 0.15s', flexShrink: 0,
+                    style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 18px', borderRadius: 10, fontWeight: 700, fontSize: 15, transition: 'all 0.15s', flexShrink: 0, order: 3,
                       background: content.trim() ? (effectiveBox?.color || 'var(--accent)') : 'var(--surface2)',
                       color: content.trim() ? 'white' : 'var(--text-muted)' }}>
                     <Send size={15} />
@@ -839,18 +840,20 @@ export default function Home({ onOpenEntry, onStartReview, onShowImpressum, onSh
                           <div style={{ fontWeight: 700, fontSize: 15 }}>{bereich.name}</div>
                           <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
                             {isSelected ? '✓ ausgewählt' : `${bereich.card_count ?? 0} ${bereich.card_count === 1 ? 'Eintrag' : 'Einträge'}${hasChildren ? ` · ${bereich.children.length} Boxen` : ''}`}
-                            <span style={{ opacity: 0.5 }}>{isMobile ? ' · Halten für Ansicht' : ' · 2× für Ansicht'}</span>
+                            {!isMobile && <span style={{ opacity: 0.5 }}> · 2× für Ansicht</span>}
                           </div>
                         </div>
                       </button>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                        <button ref={gripRef} {...gripProps}
-                          style={{ padding: 6, borderRadius: 6, color: 'var(--text-muted)', opacity: 0.35, cursor: 'grab', touchAction: 'none' }}
-                          title="Halten und ziehen zum Sortieren"
-                          onMouseEnter={e => e.currentTarget.style.opacity = '0.8'}
-                          onMouseLeave={e => e.currentTarget.style.opacity = '0.35'}>
-                          <GripVertical size={15} />
-                        </button>
+                        {!isMobile && (
+                          <button ref={gripRef} {...gripProps}
+                            style={{ padding: 6, borderRadius: 6, color: 'var(--text-muted)', opacity: 0.35, cursor: 'grab', touchAction: 'none' }}
+                            title="Halten und ziehen zum Sortieren"
+                            onMouseEnter={e => e.currentTarget.style.opacity = '0.8'}
+                            onMouseLeave={e => e.currentTarget.style.opacity = '0.35'}>
+                            <GripVertical size={15} />
+                          </button>
+                        )}
                         {hoveredBereichId === bereich.id && (
                           <button onClick={e => { e.stopPropagation(); setEditingBoxId(bereich.id); }}
                             style={{ padding: 6, borderRadius: 6, color: 'var(--text-muted)', opacity: 0.5, transition: 'all 0.15s' }}
@@ -860,12 +863,14 @@ export default function Home({ onOpenEntry, onStartReview, onShowImpressum, onSh
                             <Pencil size={13} />
                           </button>
                         )}
-                        <button onClick={e => deleteBox(e, bereich)}
-                          style={{ padding: 6, borderRadius: 6, color: 'var(--text-muted)', opacity: 0.4, transition: 'all 0.15s' }}
-                          onMouseEnter={e => { e.currentTarget.style.color = 'var(--danger)'; e.currentTarget.style.opacity = '1'; }}
-                          onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.opacity = '0.4'; }}>
-                          <Trash2 size={13} />
-                        </button>
+                        {!isMobile && (
+                          <button onClick={e => deleteBox(e, bereich)}
+                            style={{ padding: 6, borderRadius: 6, color: 'var(--text-muted)', opacity: 0.4, transition: 'all 0.15s' }}
+                            onMouseEnter={e => { e.currentTarget.style.color = 'var(--danger)'; e.currentTarget.style.opacity = '1'; }}
+                            onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.opacity = '0.4'; }}>
+                            <Trash2 size={13} />
+                          </button>
+                        )}
                         <button onClick={e => { e.stopPropagation(); toggleExpand(bereich.id); }}
                           style={{ padding: 6, borderRadius: 6, color: 'var(--text-muted)', transition: 'transform 0.2s', transform: isExpanded ? 'rotate(90deg)' : 'none' }}>
                           <ChevronRight size={16} />
