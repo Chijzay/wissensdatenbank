@@ -42,17 +42,27 @@ function SortableBoxCard({ id, children }) {
   );
 }
 
-export default function Home({ onOpenEntry, onStartReview, onShowImpressum }) {
+export default function Home({ onOpenEntry, onStartReview, onShowImpressum, onShowPapierkorb }) {
   const [allBoxes, setAllBoxes] = useState([]);
   const [tree, setTree] = useState([]);
   const [entries, setEntries] = useState([]);
   const [search, setSearch] = useState('');
 
-  // Navigation
-  const [activeBereich, setActiveBereich] = useState(null);
-  const [activeBox, setActiveBox] = useState(null);
-  const [expanded, setExpanded] = useState(new Set());
-  const navRestored = useRef(false);
+  // Navigation — aus localStorage vorinitialisiert, kein Flash beim Neuladen
+  const [activeBereich, setActiveBereich] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('nav-bereich')); } catch { return null; }
+  });
+  const [activeBox, setActiveBox] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('nav-box')); } catch { return null; }
+  });
+  const [expanded, setExpanded] = useState(() => {
+    try {
+      const b = JSON.parse(localStorage.getItem('nav-bereich'));
+      if (b?.id) return new Set([b.id]);
+    } catch {}
+    return new Set();
+  });
+  const syncedRef = useRef(false);
 
   // Capture
   const [content, setContent] = useState('');
@@ -61,6 +71,7 @@ export default function Home({ onOpenEntry, onStartReview, onShowImpressum }) {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
   const [focused, setFocused] = useState(false);
+  const [dupWarning, setDupWarning] = useState([]);
 
   // KI-Wissensgenerierung
   const [showAiGen, setShowAiGen] = useState(false);
@@ -85,6 +96,7 @@ export default function Home({ onOpenEntry, onStartReview, onShowImpressum }) {
   const textareaRef = useRef(null);
   const recognitionRef = useRef(null);
   const recordingRef = useRef(false);
+  const dupTimerRef = useRef(null);
   const bereichTouchTimers = useRef({});
   const bereichLongPressed = useRef({});
   const bereichClickTimers = useRef({});
@@ -101,11 +113,7 @@ export default function Home({ onOpenEntry, onStartReview, onShowImpressum }) {
     const newIdx = tree.findIndex(b => b.id === over.id);
     const newTree = arrayMove(tree, oldIdx, newIdx);
     setTree(newTree);
-    await fetch('/api/boxes/sort', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ orders: newTree.map((b, i) => ({ id: b.id, sort_order: i + 1 })) }),
-    });
+    await api.boxes.sort(newTree.map((b, i) => ({ id: b.id, sort_order: i + 1 })));
   };
 
   const loadBoxes = useCallback(async () => {
@@ -130,34 +138,52 @@ export default function Home({ onOpenEntry, onStartReview, onShowImpressum }) {
 
   useEffect(() => { loadBoxes(); }, [loadBoxes]);
 
-  // Navigation nach Reload wiederherstellen (einmalig nach dem ersten Box-Laden)
+  // Nach erstem Box-Laden: Nav-State mit aktuellen Daten abgleichen
   useEffect(() => {
-    if (!allBoxes.length || navRestored.current) return;
-    navRestored.current = true;
-    const bereichId = Number(localStorage.getItem('nav-bereich-id'));
-    const boxId = Number(localStorage.getItem('nav-box-id'));
-    if (bereichId) {
-      const bereich = allBoxes.find(b => b.id === bereichId);
-      if (bereich) {
-        setActiveBereich(bereich);
-        setExpanded(prev => new Set([...prev, bereich.id]));
-        if (boxId) {
-          const box = allBoxes.find(b => b.id === boxId);
-          if (box) { setActiveBox(box); setSaveToBox(box); }
+    if (!allBoxes.length || syncedRef.current) return;
+    syncedRef.current = true;
+    if (activeBereich) {
+      const fresh = allBoxes.find(b => b.id === activeBereich.id);
+      if (fresh) {
+        setActiveBereich(fresh);
+        setExpanded(prev => new Set([...prev, fresh.id]));
+        if (activeBox) {
+          const freshBox = allBoxes.find(b => b.id === activeBox.id);
+          if (freshBox) { setActiveBox(freshBox); setSaveToBox(freshBox); }
+          else setActiveBox(null);
         }
+      } else {
+        setActiveBereich(null);
+        setActiveBox(null);
       }
     }
   }, [allBoxes]);
 
-  // Bereich/Box-Position speichern
+  // Bereich/Box als vollständige Objekte speichern (kein Async-Lookup beim Neuladen nötig)
   useEffect(() => {
-    if (activeBereich) localStorage.setItem('nav-bereich-id', activeBereich.id);
-    else localStorage.removeItem('nav-bereich-id');
+    if (activeBereich) localStorage.setItem('nav-bereich', JSON.stringify(activeBereich));
+    else localStorage.removeItem('nav-bereich');
   }, [activeBereich]);
   useEffect(() => {
-    if (activeBox) localStorage.setItem('nav-box-id', activeBox.id);
-    else localStorage.removeItem('nav-box-id');
+    if (activeBox) localStorage.setItem('nav-box', JSON.stringify(activeBox));
+    else localStorage.removeItem('nav-box');
   }, [activeBox]);
+
+  // Duplikat-Check: erste Zeile der Eingabe gegen vorhandene Titel prüfen
+  useEffect(() => {
+    const firstLine = content.split('\n')[0].trim();
+    if (firstLine.length < 4) { setDupWarning([]); return; }
+    clearTimeout(dupTimerRef.current);
+    dupTimerRef.current = setTimeout(async () => {
+      const { data } = await supabase.from('cards')
+        .select('id, title')
+        .ilike('title', `%${firstLine}%`)
+        .is('deleted_at', null)
+        .limit(3);
+      setDupWarning(data || []);
+    }, 600);
+    return () => clearTimeout(dupTimerRef.current);
+  }, [content]);
 
   useEffect(() => { loadEntries(); }, [loadEntries]);
   useEffect(() => { const t = setTimeout(loadEntries, 280); return () => clearTimeout(t); }, [search]);
@@ -180,6 +206,7 @@ export default function Home({ onOpenEntry, onStartReview, onShowImpressum }) {
       const fullCard = { ...newCard, box_name: box.name, box_color: box.color, box_icon: box.icon, box_parent_id: box.parent_id };
       setContent('');
       setSaveToBox(null);
+      setDupWarning([]);
       onOpenEntry(fullCard);
       textareaRef.current?.focus();
     } finally { setSaving(false); }
@@ -218,11 +245,7 @@ export default function Home({ onOpenEntry, onStartReview, onShowImpressum }) {
     const oldIdx = siblings.findIndex(b => b.id === active.id);
     const newIdx = siblings.findIndex(b => b.id === over.id);
     const newOrder = arrayMove(siblings, oldIdx, newIdx);
-    await fetch('/api/boxes/sort', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ orders: newOrder.map((b, i) => ({ id: b.id, sort_order: i + 1 })) }),
-    });
+    await api.boxes.sort(newOrder.map((b, i) => ({ id: b.id, sort_order: i + 1 })));
     await loadBoxes();
   };
 
@@ -415,6 +438,20 @@ export default function Home({ onOpenEntry, onStartReview, onShowImpressum }) {
             </div>
             <ThemePicker />
             <button
+              onClick={onShowPapierkorb}
+              title="Papierkorb"
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                width: 34, height: 34, borderRadius: '50%',
+                border: '1px solid var(--border)', background: 'var(--surface)',
+                color: 'var(--text-muted)', transition: 'all 0.15s',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'var(--surface2)'; e.currentTarget.style.borderColor = 'var(--danger)'; e.currentTarget.style.color = 'var(--danger)'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'var(--surface)'; e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-muted)'; }}
+            >
+              <Trash2 size={16} />
+            </button>
+            <button
               onClick={() => supabase.auth.signOut()}
               title="Abmelden"
               style={{
@@ -448,6 +485,26 @@ export default function Home({ onOpenEntry, onStartReview, onShowImpressum }) {
             placeholder="Was möchtest du festhalten?&#10;(erste Zeile wird Titel)"
             rows={5}
             style={{ width: '100%', fontSize: 16, lineHeight: 1.7, background: 'transparent', marginBottom: 14 }} />
+
+          {/* Duplikat-Warnung */}
+          {dupWarning.length > 0 && (
+            <div style={{ background: '#f59e0b11', border: '1px solid #f59e0b44', borderRadius: 8, padding: '8px 12px', marginBottom: 10, fontSize: 12 }}>
+              <span style={{ color: '#f59e0b', fontWeight: 600 }}>⚠ Mögliche Duplikate:</span>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 6 }}>
+                {dupWarning.map(d => (
+                  <button key={d.id}
+                    onClick={async () => {
+                      const card = await api.cards.get(d.id);
+                      const box = allBoxes.find(b => b.id === card.box_id) || {};
+                      onOpenEntry({ ...card, box_name: box.name || '', box_color: box.color || '', box_icon: box.icon || '', box_parent_id: box.parent_id || null });
+                    }}
+                    style={{ padding: '3px 10px', borderRadius: 10, background: '#f59e0b22', color: '#f59e0b', fontWeight: 600, fontSize: 12, border: '1px solid #f59e0b44' }}>
+                    {d.title}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Ziel-Box Statuszeile — feste Mindesthöhe verhindert Layout-Shift beim Klicken */}
           {(() => {

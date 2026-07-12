@@ -73,7 +73,7 @@ serve(async (req) => {
         const { card_id, title, content } = data;
         const { data: allCards } = await supabase.from('cards')
           .select('id, title, content, boxes!inner(name)')
-          .neq('id', card_id || 0).order('updated_at', { ascending: false }).limit(60);
+          .neq('id', card_id || 0).is('deleted_at', null).order('updated_at', { ascending: false }).limit(60);
         if (!allCards?.length) return json({ suggestions: [] });
         const cardList = (allCards as Any[]).map(c =>
           `ID ${c.id} [${c.boxes.name}]: ${c.title} – ${c.content.slice(0, 80)}`

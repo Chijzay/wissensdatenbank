@@ -11,7 +11,14 @@ async function ai(action, data = {}) {
   const { data: result, error } = await supabase.functions.invoke('ai', {
     body: { action, ...data },
   });
-  if (error) throw new Error(error.message || JSON.stringify(error));
+  if (error) {
+    let msg = error.message || 'KI nicht verfügbar';
+    try {
+      const body = await error.context?.json?.();
+      if (body?.error) msg = body.error;
+    } catch { /* no context body */ }
+    throw new Error(msg);
+  }
   return result;
 }
 
@@ -20,7 +27,7 @@ export const api = {
     list: async () => {
       const { data: boxes, error: bErr } = await supabase.from('boxes').select('*').order('sort_order').order('created_at');
       if (bErr) throw bErr;
-      const { data: cards, error: cErr } = await supabase.from('cards').select('id, box_id');
+      const { data: cards, error: cErr } = await supabase.from('cards').select('id, box_id').is('deleted_at', null);
       if (cErr) throw cErr;
 
       const result = boxes.map(b => {
@@ -93,6 +100,7 @@ export const api = {
       const { search, topic, bereich } = params;
       let query = supabase.from('cards')
         .select('*, boxes!inner(name, color, icon, parent_id)')
+        .is('deleted_at', null)
         .order('updated_at', { ascending: false });
 
       if (search) query = query.or(`title.ilike.%${search}%,content.ilike.%${search}%,tags.ilike.%${search}%`);
@@ -121,7 +129,7 @@ export const api = {
 
     list: async (boxId, params = {}) => {
       const { search, tag, category } = params;
-      let query = supabase.from('cards').select('*').eq('box_id', boxId).order('updated_at', { ascending: false });
+      let query = supabase.from('cards').select('*').eq('box_id', boxId).is('deleted_at', null).order('updated_at', { ascending: false });
       if (search) query = query.or(`title.ilike.%${search}%,content.ilike.%${search}%,tags.ilike.%${search}%`);
       if (tag) query = query.ilike('tags', `%${tag}%`);
       if (category) query = query.eq('category', category);
@@ -142,7 +150,7 @@ export const api = {
     },
 
     get: async (id) => {
-      const { data: card, error } = await supabase.from('cards').select('*').eq('id', id).single();
+      const { data: card, error } = await supabase.from('cards').select('*').eq('id', id).is('deleted_at', null).single();
       if (error) throw error;
 
       const [{ data: questions }, { data: linksA }, { data: linksB }] = await Promise.all([
@@ -162,7 +170,7 @@ export const api = {
     },
 
     random: async (boxId) => {
-      const { data: cards } = await supabase.from('cards').select('id').eq('box_id', boxId);
+      const { data: cards } = await supabase.from('cards').select('id').eq('box_id', boxId).is('deleted_at', null);
       if (!cards?.length) throw new Error('Keine Karten vorhanden');
       const randomId = cards[Math.floor(Math.random() * cards.length)].id;
       const { data: card, error } = await supabase.from('cards').select('*').eq('id', randomId).single();
@@ -191,6 +199,36 @@ export const api = {
     },
 
     delete: async (id) => {
+      const { error } = await supabase.from('cards')
+        .update({ deleted_at: new Date().toISOString() })
+        .eq('id', id);
+      if (error) throw error;
+      return { ok: true };
+    },
+
+    trash: async () => {
+      const { data, error } = await supabase.from('cards')
+        .select('*, boxes(name, color, icon)')
+        .not('deleted_at', 'is', null)
+        .order('deleted_at', { ascending: false });
+      if (error) throw error;
+      return (data || []).map(c => ({
+        ...c,
+        box_name: c.boxes?.name || '',
+        box_color: c.boxes?.color || '',
+        box_icon: c.boxes?.icon || '',
+        boxes: undefined,
+        tags: parseTags(c.tags),
+      }));
+    },
+
+    restore: async (id) => {
+      const { error } = await supabase.from('cards').update({ deleted_at: null }).eq('id', id);
+      if (error) throw error;
+      return { ok: true };
+    },
+
+    deletePermanently: async (id) => {
       await supabase.from('cards').delete().eq('id', id);
       return { ok: true };
     },

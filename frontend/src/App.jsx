@@ -5,6 +5,7 @@ import EntryDetail from './components/EntryDetail.jsx';
 import QuizMode from './components/QuizMode.jsx';
 import ReviewMode from './components/ReviewMode.jsx';
 import Impressum from './components/Impressum.jsx';
+import Papierkorb from './components/Papierkorb.jsx';
 import Login from './components/Login.jsx';
 import { useTheme } from './components/ThemePicker.jsx';
 import { supabase } from './supabase.js';
@@ -16,7 +17,7 @@ export default function App() {
   const [activeEntry, setActiveEntry] = useState(null);
   const [quizEntry, setQuizEntry] = useState(null);
   const [reviewCards, setReviewCards] = useState(null);
-  const [restoring, setRestoring] = useState(false);
+  const [restoring, setRestoring] = useState(() => !!localStorage.getItem('nav-entry-id'));
   const navRestored = useRef(false);
 
   useEffect(() => {
@@ -51,8 +52,8 @@ export default function App() {
     else localStorage.removeItem('nav-entry-id');
   }, [view, activeEntry, session]);
 
-  // Laden
-  if (session === undefined || restoring) return (
+  // Laden (Verbindung wird aufgebaut)
+  if (session === undefined) return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ color: 'var(--text-muted)', fontSize: 14 }}>Laden…</div>
     </div>
@@ -61,10 +62,18 @@ export default function App() {
   // Nicht angemeldet
   if (!session) return <Login />;
 
+  // Letzten Eintrag wiederherstellen
+  if (restoring) return (
+    <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ color: 'var(--text-muted)', fontSize: 14 }}>Laden…</div>
+    </div>
+  );
+
   // Angemeldet
   if (quizEntry) return <QuizMode card={quizEntry} onClose={() => setQuizEntry(null)} />;
   if (reviewCards) return <ReviewMode cards={reviewCards} onClose={() => setReviewCards(null)} />;
   if (view === 'impressum') return <Impressum onClose={() => setView('home')} />;
+  if (view === 'papierkorb') return <Papierkorb onClose={() => setView('home')} />;
 
   if (view === 'entry' && activeEntry) return (
     <EntryDetail
@@ -81,6 +90,7 @@ export default function App() {
       onOpenEntry={(entry) => { setActiveEntry(entry); setView('entry'); }}
       onStartReview={(cards) => setReviewCards(cards)}
       onShowImpressum={() => setView('impressum')}
+      onShowPapierkorb={() => setView('papierkorb')}
     />
   );
 }
