@@ -262,25 +262,30 @@ export default function Home({ onOpenEntry, onStartReview, onShowImpressum, onSh
     const writingNow = !!content.trim();
 
     if (bereichClickTimers.current[bereich.id]) {
-      // Zweiter Klick innerhalb 380ms → in Bereich navigieren
+      // Zweiter Klick innerhalb 350ms → in Bereich navigieren
       clearTimeout(bereichClickTimers.current[bereich.id]);
       delete bereichClickTimers.current[bereich.id];
       navigateToBereich(bereich);
-    } else {
-      bereichClickTimers.current[bereich.id] = setTimeout(() => {
-        delete bereichClickTimers.current[bereich.id];
-        if (!hasChildren) {
-          // Keine Sub-Boxen: Bereich als Speicherziel aus-/abwählen
-          setSaveToBox(prev => prev?.id === bereich.id ? null : bereich);
-        } else if (writingNow) {
-          // Inhalt wird gerade getippt: aufklappen damit Sub-Box wählbar ist
-          setExpanded(prev => new Set([...prev, bereich.id]));
-        } else {
-          // Hat Sub-Boxen, nichts in Eingabe: auf-/zuklappen
-          toggleExpand(bereich.id);
-        }
-      }, 250);
+      return;
     }
+
+    // Erster Klick: Aktion SOFORT ausführen
+    if (!hasChildren) {
+      // Keine Sub-Boxen: als Speicherziel aus-/abwählen und aufklappen
+      setSaveToBox(prev => prev?.id === bereich.id ? null : bereich);
+      setExpanded(prev => new Set([...prev, bereich.id]));
+    } else if (writingNow) {
+      // Inhalt wird getippt: aufklappen damit Sub-Box wählbar ist
+      setExpanded(prev => new Set([...prev, bereich.id]));
+    } else {
+      // Hat Sub-Boxen, nichts in Eingabe: sofort auf-/zuklappen
+      toggleExpand(bereich.id);
+    }
+
+    // Timer nur zum Erkennen eines zweiten Klicks (für Navigation)
+    bereichClickTimers.current[bereich.id] = setTimeout(() => {
+      delete bereichClickTimers.current[bereich.id];
+    }, 350);
   };
 
   const [micError, setMicError] = useState('');
