@@ -6,6 +6,7 @@ import QuizMode from './components/QuizMode.jsx';
 import ReviewMode from './components/ReviewMode.jsx';
 import Impressum from './components/Impressum.jsx';
 import Papierkorb from './components/Papierkorb.jsx';
+import BereicheVerwaltung from './components/BereicheVerwaltung.jsx';
 import Login from './components/Login.jsx';
 import { useTheme } from './components/ThemePicker.jsx';
 import { supabase } from './supabase.js';
@@ -74,6 +75,7 @@ export default function App() {
   if (reviewCards) return <ReviewMode cards={reviewCards} onClose={() => setReviewCards(null)} />;
   if (view === 'impressum') return <Impressum onClose={() => setView('home')} />;
   if (view === 'papierkorb') return <Papierkorb onClose={() => setView('home')} />;
+  if (view === 'bereiche') return <BereicheVerwaltung onClose={() => setView('home')} />;
 
   if (view === 'entry' && activeEntry) return (
     <EntryDetail
@@ -91,6 +93,7 @@ export default function App() {
       onStartReview={(cards) => setReviewCards(cards)}
       onShowImpressum={() => setView('impressum')}
       onShowPapierkorb={() => setView('papierkorb')}
+      onShowBereiche={() => setView('bereiche')}
     />
   );
 }

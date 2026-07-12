@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Mic, MicOff, Send, Search, X, Plus, ArrowLeft, ChevronRight, ChevronDown, Trash2, Sparkles, Shuffle, GraduationCap, GripVertical, LogOut, Pencil } from 'lucide-react';
+import { Mic, MicOff, Send, Search, X, Plus, ArrowLeft, ChevronRight, ChevronDown, Trash2, Sparkles, Shuffle, GraduationCap, GripVertical, LogOut, Pencil, LayoutGrid } from 'lucide-react';
 import { api } from '../api/client.js';
 import { DndContext, closestCenter, PointerSensor, TouchSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, rectSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable';
@@ -42,7 +42,7 @@ function SortableBoxCard({ id, children }) {
   );
 }
 
-export default function Home({ onOpenEntry, onStartReview, onShowImpressum, onShowPapierkorb }) {
+export default function Home({ onOpenEntry, onStartReview, onShowImpressum, onShowPapierkorb, onShowBereiche }) {
   const [allBoxes, setAllBoxes] = useState([]);
   const [tree, setTree] = useState([]);
   const [entries, setEntries] = useState([]);
@@ -447,6 +447,20 @@ export default function Home({ onOpenEntry, onStartReview, onShowImpressum, onSh
               <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 3, fontStyle: 'italic', letterSpacing: '0.04em' }}>Lernen. Verstehen. Behalten.</p>
             </div>
             <ThemePicker />
+            <button
+              onClick={onShowBereiche}
+              title="Bereiche verwalten"
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                width: 34, height: 34, borderRadius: '50%',
+                border: '1px solid var(--border)', background: 'var(--surface)',
+                color: 'var(--text-muted)', transition: 'all 0.15s',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'var(--surface2)'; e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.color = 'var(--accent)'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'var(--surface)'; e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-muted)'; }}
+            >
+              <LayoutGrid size={16} />
+            </button>
             <button
               onClick={onShowPapierkorb}
               title="Papierkorb"
