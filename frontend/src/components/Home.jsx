@@ -70,6 +70,8 @@ export default function Home({ onOpenEntry, onStartReview, onShowImpressum, onSh
   const [recording, setRecording] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
+  const [boxDropdownOpen, setBoxDropdownOpen] = useState(false);
+  const [boxSearch, setBoxSearch] = useState('');
   const [focused, setFocused] = useState(false);
   const [dupWarning, setDupWarning] = useState([]);
 
@@ -102,6 +104,7 @@ export default function Home({ onOpenEntry, onStartReview, onShowImpressum, onSh
   const bereichTouchTimers = useRef({});
   const bereichLongPressed = useRef({});
   const bereichClickTimers = useRef({});
+  const boxDropdownRef = useRef(null);
   const isMobile = 'ontouchstart' in window;
 
   const dndSensors = useSensors(
@@ -170,6 +173,14 @@ export default function Home({ onOpenEntry, onStartReview, onShowImpressum, onSh
     if (activeBox) localStorage.setItem('nav-box', JSON.stringify(activeBox));
     else localStorage.removeItem('nav-box');
   }, [activeBox]);
+
+  // Dropdown schließen bei Klick außerhalb
+  useEffect(() => {
+    if (!boxDropdownOpen) return;
+    const handler = (e) => { if (!boxDropdownRef.current?.contains(e.target)) { setBoxDropdownOpen(false); setBoxSearch(''); } };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [boxDropdownOpen]);
 
   // Duplikat-Check: erste Zeile der Eingabe gegen vorhandene Titel prüfen
   useEffect(() => {
@@ -502,60 +513,106 @@ export default function Home({ onOpenEntry, onStartReview, onShowImpressum, onSh
             </div>
           )}
 
-          {/* Ziel-Box Statuszeile — feste Mindesthöhe verhindert Layout-Shift beim Klicken */}
           {(() => {
             const hasSubBoxes = (b) => b && allBoxes.some(x => x.parent_id === b.id);
             const effectiveBox = saveToBox || activeBox || (!hasSubBoxes(activeBereich) ? activeBereich : null);
-            const showRow = effectiveBox || saveError || content.trim();
-            if (!showRow) return null;
+            const showMany = allBoxes.length > 8;
+            const filteredTree = boxSearch
+              ? allBoxes.filter(b => b.name.toLowerCase().includes(boxSearch.toLowerCase()))
+              : null;
             return (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, minHeight: 36, marginBottom: 14, paddingBottom: 14, borderBottom: '1px solid var(--border)' }}>
-                {effectiveBox ? (
-                  <>
-                    <span style={{ fontSize: 12, color: 'var(--text-muted)', flexShrink: 0 }}>Speichert in:</span>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '3px 10px', borderRadius: 20, fontSize: 13, fontWeight: 600,
-                      background: (effectiveBox.color || 'var(--accent)') + '22', color: effectiveBox.color || 'var(--accent)',
-                      border: `1px solid ${(effectiveBox.color || 'var(--accent)') + '44'}` }}>
-                      {effectiveBox.icon} {effectiveBox.name}
-                    </span>
-                    {saveToBox && (
-                      <button onClick={() => setSaveToBox(null)} title="Auswahl aufheben"
-                        style={{ fontSize: 12, color: 'var(--text-muted)', padding: '2px 6px', borderRadius: 4 }}>✕</button>
-                    )}
-                  </>
-                ) : saveError ? (
-                  <span style={{ fontSize: 13, color: 'var(--danger)', fontWeight: 500 }}>{saveError}</span>
-                ) : (
-                  <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>↓ Bereich oder Box unten auswählen</span>
+              <>
+                {(micError || saveError) && (
+                  <div style={{ marginBottom: 8 }}>
+                    {saveError && <div style={{ fontSize: 12, color: 'var(--danger)', marginBottom: 4 }}>{saveError}</div>}
+                    {micError && <div style={{ fontSize: 12, color: 'var(--danger)', padding: '6px 10px', background: '#ef444418', borderRadius: 8 }}>{micError}</div>}
+                  </div>
                 )}
-              </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  {/* Diktieren */}
+                  <button
+                    className={recording ? 'mic-recording' : ''}
+                    onMouseDown={startRecording} onMouseUp={stopRecording}
+                    onMouseLeave={stopRecording} onTouchStart={startRecording} onTouchEnd={stopRecording}
+                    style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 13px', borderRadius: 8, border: '1px solid var(--border)', fontSize: 13, color: 'var(--text-muted)', flexShrink: 0, userSelect: 'none', WebkitUserSelect: 'none' }}>
+                    {recording ? <><MicOff size={14} /> Sprechen…</> : <><Mic size={14} /> Diktieren</>}
+                  </button>
+
+                  {/* Bereich-Dropdown — immer sichtbar, kein Layout-Shift */}
+                  <div ref={boxDropdownRef} style={{ position: 'relative', flex: 1 }}>
+                    <button
+                      onClick={() => { setBoxDropdownOpen(v => !v); setBoxSearch(''); }}
+                      style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 6, padding: '7px 11px', borderRadius: 8,
+                        border: `1px solid ${effectiveBox ? (effectiveBox.color || 'var(--accent)') + '88' : saveError ? 'var(--danger)' : 'var(--border)'}`,
+                        background: effectiveBox ? (effectiveBox.color || 'var(--accent)') + '15' : 'var(--surface2)',
+                        color: effectiveBox ? (effectiveBox.color || 'var(--accent)') : saveError ? 'var(--danger)' : 'var(--text-muted)',
+                        fontSize: 13, fontWeight: effectiveBox ? 600 : 400, minWidth: 0 }}>
+                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, textAlign: 'left' }}>
+                        {effectiveBox ? `${effectiveBox.icon} ${effectiveBox.name}` : '📍 Speichern in…'}
+                      </span>
+                      {saveToBox
+                        ? <X size={12} style={{ flexShrink: 0, opacity: 0.6 }}
+                            onClick={e => { e.stopPropagation(); setSaveToBox(null); setBoxDropdownOpen(false); }} />
+                        : <ChevronDown size={13} style={{ flexShrink: 0, opacity: 0.5 }} />}
+                    </button>
+
+                    {boxDropdownOpen && (
+                      <div style={{ position: 'absolute', bottom: 'calc(100% + 4px)', left: 0, right: 0,
+                        background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10,
+                        maxHeight: 280, display: 'flex', flexDirection: 'column',
+                        zIndex: 200, boxShadow: '0 -6px 20px #00000044' }}>
+                        {showMany && (
+                          <div style={{ padding: '8px 10px', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
+                            <input autoFocus value={boxSearch} onChange={e => setBoxSearch(e.target.value)}
+                              placeholder="Suchen…"
+                              style={{ width: '100%', padding: '4px 8px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', fontSize: 13 }} />
+                          </div>
+                        )}
+                        <div style={{ overflowY: 'auto' }}>
+                          {(filteredTree || tree).map(bereich => (
+                            <div key={bereich.id}>
+                              <button
+                                onClick={() => { setSaveToBox(bereich); setSaveError(''); setBoxDropdownOpen(false); setBoxSearch(''); }}
+                                style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px',
+                                  background: saveToBox?.id === bereich.id ? bereich.color + '22' : 'transparent',
+                                  color: saveToBox?.id === bereich.id ? bereich.color : 'var(--text)',
+                                  fontWeight: saveToBox?.id === bereich.id ? 700 : 500, fontSize: 13, textAlign: 'left',
+                                  borderBottom: '1px solid var(--border)11' }}>
+                                <span style={{ fontSize: 16 }}>{bereich.icon}</span>
+                                <span style={{ flex: 1 }}>{bereich.name}</span>
+                                {saveToBox?.id === bereich.id && <span style={{ fontSize: 11 }}>✓</span>}
+                              </button>
+                              {!filteredTree && (bereich.children || []).map(box => (
+                                <button key={box.id}
+                                  onClick={() => { setSaveToBox(box); setSaveError(''); setBoxDropdownOpen(false); setBoxSearch(''); }}
+                                  style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '6px 12px 6px 32px',
+                                    background: saveToBox?.id === box.id ? box.color + '22' : 'transparent',
+                                    color: saveToBox?.id === box.id ? box.color : 'var(--text-muted)',
+                                    fontWeight: saveToBox?.id === box.id ? 700 : 400, fontSize: 12, textAlign: 'left' }}>
+                                  <span>{box.icon}</span>
+                                  <span style={{ flex: 1 }}>{box.name}</span>
+                                  {saveToBox?.id === box.id && <span style={{ fontSize: 11 }}>✓</span>}
+                                </button>
+                              ))}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Speichern */}
+                  <button className="capture-save-btn" onClick={save} disabled={!content.trim() || saving}
+                    style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 18px', borderRadius: 10, fontWeight: 700, fontSize: 15, transition: 'all 0.15s', flexShrink: 0,
+                      background: content.trim() ? (effectiveBox?.color || 'var(--accent)') : 'var(--surface2)',
+                      color: content.trim() ? 'white' : 'var(--text-muted)' }}>
+                    <Send size={15} />
+                    {saving ? 'Speichert…' : 'Speichern'}
+                  </button>
+                </div>
+              </>
             );
           })()}
-
-          {micError && (
-            <div style={{ fontSize: 12, color: 'var(--danger)', marginBottom: 6, padding: '6px 10px', background: '#ef444418', borderRadius: 8 }}>
-              {micError}
-            </div>
-          )}
-          <div className="capture-actions" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <button
-              className={recording ? 'mic-recording' : ''}
-              onMouseDown={startRecording}
-              onMouseUp={stopRecording}
-              onMouseLeave={stopRecording}
-              onTouchStart={startRecording}
-              onTouchEnd={stopRecording}
-              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 13px', borderRadius: 8, border: '1px solid var(--border)', fontSize: 13, color: 'var(--text-muted)', userSelect: 'none', WebkitUserSelect: 'none' }}>
-              {recording ? <><MicOff size={14} /> Sprechen…</> : <><Mic size={14} /> Diktieren</>}
-            </button>
-            <button className="capture-save-btn" onClick={save} disabled={!content.trim() || saving}
-              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 20px', borderRadius: 10, fontWeight: 700, fontSize: 15, transition: 'all 0.15s',
-                background: content.trim() ? (saveToBox?.color || 'var(--accent)') : 'var(--surface2)',
-                color: content.trim() ? 'white' : 'var(--text-muted)' }}>
-              <Send size={15} />
-              {saving ? 'Speichert…' : 'Speichern'}
-            </button>
-          </div>
           {content.trim() && (
             <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 8 }}>
               Strg+Enter zum Speichern
