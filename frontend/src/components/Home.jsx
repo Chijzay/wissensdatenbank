@@ -258,31 +258,18 @@ export default function Home({ onOpenEntry, onStartReview, onShowImpressum, onSh
   });
 
   const handleBereichClick = (bereich) => {
-    const hasChildren = allBoxes.some(b => b.parent_id === bereich.id);
-    const writingNow = !!content.trim();
-
     if (bereichClickTimers.current[bereich.id]) {
-      // Zweiter Klick innerhalb 350ms → in Bereich navigieren
+      // Doppelklick → in Bereich navigieren
       clearTimeout(bereichClickTimers.current[bereich.id]);
       delete bereichClickTimers.current[bereich.id];
       navigateToBereich(bereich);
       return;
     }
 
-    // Erster Klick: Aktion SOFORT ausführen
-    if (!hasChildren) {
-      // Keine Sub-Boxen: als Speicherziel aus-/abwählen und aufklappen
-      setSaveToBox(prev => prev?.id === bereich.id ? null : bereich);
-      setExpanded(prev => new Set([...prev, bereich.id]));
-    } else if (writingNow) {
-      // Inhalt wird getippt: aufklappen damit Sub-Box wählbar ist
-      setExpanded(prev => new Set([...prev, bereich.id]));
-    } else {
-      // Hat Sub-Boxen, nichts in Eingabe: sofort auf-/zuklappen
-      toggleExpand(bereich.id);
-    }
+    // Einfacher Klick: sofort als Speicherziel aus-/abwählen (kein Expand)
+    setSaveToBox(prev => prev?.id === bereich.id ? null : bereich);
 
-    // Timer nur zum Erkennen eines zweiten Klicks (für Navigation)
+    // Zeitfenster für Doppelklick-Erkennung
     bereichClickTimers.current[bereich.id] = setTimeout(() => {
       delete bereichClickTimers.current[bereich.id];
     }, 350);
@@ -741,7 +728,7 @@ export default function Home({ onOpenEntry, onStartReview, onShowImpressum, onSh
                 const isExpanded = expanded.has(bereich.id);
                 const isActive = activeBereich?.id === bereich.id;
                 const hasChildren = bereich.children?.length > 0;
-                const isSelected = !hasChildren && saveToBox?.id === bereich.id;
+                const isSelected = saveToBox?.id === bereich.id;
                 return (
                   <SortableBereichItem key={bereich.id} id={bereich.id}>
                     {({ gripRef, gripProps }) => (
