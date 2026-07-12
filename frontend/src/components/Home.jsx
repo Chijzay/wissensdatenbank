@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Mic, MicOff, Send, Search, X, Plus, ArrowLeft, ChevronRight, ChevronDown, Trash2, Sparkles, Shuffle, GraduationCap, GripVertical, LogOut, Pencil, LayoutGrid } from 'lucide-react';
+import { Mic, Send, Search, X, Plus, ArrowLeft, ChevronRight, ChevronDown, Trash2, Sparkles, Shuffle, GraduationCap, GripVertical, LogOut, Pencil, LayoutGrid } from 'lucide-react';
 import { api } from '../api/client.js';
 import { DndContext, closestCenter, PointerSensor, TouchSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, rectSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable';
@@ -276,20 +276,15 @@ export default function Home({ onOpenEntry, onStartReview, onShowImpressum, onSh
 
   const [micError, setMicError] = useState('');
 
-  const startRecording = async (e) => {
-    e.preventDefault();
-    if (recordingRef.current) { stopRecording(); return; }
+  const startRecording = async () => {
+    if (recordingRef.current) return;
     if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
       setMicError('Spracherkennung nur in Chrome verfügbar'); return;
     }
-
-    // Kein HTTPS → Mikrofon auf Mobilgeräten nicht möglich
     if (!window.isSecureContext) {
       setMicError('Diktieren erfordert HTTPS. Für lokalen Test: ngrok oder chrome://flags → "Insecure origins treated as secure" → IP:Port eintragen und Chrome neu starten.');
       return;
     }
-
-    // Mikrofon-Berechtigung explizit anfragen → löst Browser-Popup aus
     if (navigator.mediaDevices?.getUserMedia) {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -306,7 +301,6 @@ export default function Home({ onOpenEntry, onStartReview, onShowImpressum, onSh
         return;
       }
     }
-
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     const rec = new SR();
     rec.lang = 'de-DE'; rec.continuous = true; rec.interimResults = false;
@@ -343,6 +337,7 @@ export default function Home({ onOpenEntry, onStartReview, onShowImpressum, onSh
 
   const stopRecording = () => {
     if (!recordingRef.current) return;
+    recordingRef.current = false;
     recognitionRef.current?.stop();
   };
 
@@ -549,13 +544,22 @@ export default function Home({ onOpenEntry, onStartReview, onShowImpressum, onSh
                 )}
                 {/* Mobile: Dropdown oben (volle Breite), Buttons darunter. Desktop: alles in einer Zeile */}
                 <div style={{ display: 'flex', flexWrap: isMobile ? 'wrap' : 'nowrap', alignItems: 'center', gap: 8, justifyContent: 'space-between' }}>
-                  {/* Diktieren — mobile: zweite Zeile links */}
+                  {/* Diktieren — mobile: Halten zum Sprechen; Desktop: Klick zum Umschalten */}
                   <button
-                    className={recording ? 'mic-recording' : ''}
-                    onMouseDown={startRecording} onMouseUp={stopRecording}
-                    onMouseLeave={stopRecording} onTouchStart={startRecording} onTouchEnd={stopRecording}
-                    style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 13px', borderRadius: 8, border: '1px solid var(--border)', fontSize: 13, color: 'var(--text-muted)', flexShrink: 0, order: isMobile ? 2 : 1, userSelect: 'none', WebkitUserSelect: 'none' }}>
-                    {recording ? <><MicOff size={14} /> Sprechen…</> : <><Mic size={14} /> Diktieren</>}
+                    className={recording ? 'mic-active' : ''}
+                    {...(isMobile ? {
+                      onPointerDown: (e) => { e.preventDefault(); startRecording(); },
+                      onPointerUp: () => stopRecording(),
+                      onPointerCancel: () => stopRecording(),
+                      onContextMenu: (e) => e.preventDefault(),
+                    } : {
+                      onClick: () => recording ? stopRecording() : startRecording(),
+                    })}
+                    style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 13px', borderRadius: 8, border: '1px solid var(--border)', fontSize: 13, color: 'var(--text-muted)', flexShrink: 0, order: isMobile ? 2 : 1, userSelect: 'none', WebkitUserSelect: 'none', touchAction: 'none' }}>
+                    <Mic size={14} />
+                    {recording
+                      ? (isMobile ? 'Sprechen…' : 'Aufnahme läuft…')
+                      : (isMobile ? 'Halten' : 'Diktieren')}
                   </button>
 
                   {/* Bereich-Dropdown — mobile: erste Zeile volle Breite */}

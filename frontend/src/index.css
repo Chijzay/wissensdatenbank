@@ -73,14 +73,14 @@ input, textarea {
 
 /* ── Diktieren Pulse ── */
 @keyframes mic-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 #ef444444; }
-  50% { box-shadow: 0 0 0 8px #ef444400; }
+  0%, 100% { box-shadow: 0 0 0 0 #22c55e44; }
+  50% { box-shadow: 0 0 0 8px #22c55e00; }
 }
-.mic-recording {
+.mic-active {
   animation: mic-pulse 1s ease-in-out infinite;
-  background: #ef444422 !important;
-  border-color: var(--danger) !important;
-  color: var(--danger) !important;
+  background: #22c55e22 !important;
+  border-color: var(--success) !important;
+  color: var(--success) !important;
 }
 
 /* ── Mobile Responsive ── */
