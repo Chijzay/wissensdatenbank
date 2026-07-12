@@ -415,8 +415,8 @@ export default function Home({ onOpenEntry, onStartReview, onShowImpressum, onSh
   return (
     <div className="main-wrap" style={{ maxWidth: 780, margin: '0 auto', padding: '0 20px 28px' }}>
 
-      {/* Sticky: Header + Capture */}
-      <div style={{ position: 'sticky', top: 0, zIndex: 100, background: 'var(--bg)', paddingTop: 28, paddingBottom: 20 }}>
+      {/* Sticky: Header + Capture — negative margin damit Hintergrund auch Scrollbar-Bereich abdeckt */}
+      <div style={{ position: 'sticky', top: 0, zIndex: 100, background: 'var(--bg)', margin: '0 -20px', padding: '28px 20px 20px' }}>
 
       {/* HEADER / BREADCRUMB */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20, minHeight: 56 }}>
@@ -484,9 +484,9 @@ export default function Home({ onOpenEntry, onStartReview, onShowImpressum, onSh
         background: 'var(--surface)', borderRadius: 16, marginBottom: 0,
         border: `1.5px solid ${focused ? accentColor : 'var(--border)'}`,
         boxShadow: focused ? `0 0 0 3px ${accentColor}18` : 'none',
-        transition: 'border-color 0.2s, box-shadow 0.2s', overflow: 'hidden',
+        transition: 'border-color 0.2s, box-shadow 0.2s',
       }}>
-        <div style={{ height: 4, background: accentColor, transition: 'background 0.3s' }} />
+        <div style={{ height: 4, background: accentColor, transition: 'background 0.3s', borderRadius: '14px 14px 0 0' }} />
         <div className="capture-box" style={{ padding: '18px 20px' }}>
           <textarea ref={textareaRef} value={content}
             onChange={e => { setContent(e.target.value); if (saveError) setSaveError(''); }}
@@ -519,7 +519,7 @@ export default function Home({ onOpenEntry, onStartReview, onShowImpressum, onSh
           {(() => {
             const hasSubBoxes = (b) => b && allBoxes.some(x => x.parent_id === b.id);
             const effectiveBox = saveToBox || activeBox || (!hasSubBoxes(activeBereich) ? activeBereich : null);
-            const showMany = allBoxes.length > 8;
+            const showMany = allBoxes.length > 4;
             const filteredTree = boxSearch
               ? allBoxes.filter(b => b.name.toLowerCase().includes(boxSearch.toLowerCase()))
               : null;
@@ -560,15 +560,15 @@ export default function Home({ onOpenEntry, onStartReview, onShowImpressum, onSh
                     </button>
 
                     {boxDropdownOpen && (
-                      <div style={{ position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0,
-                        background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10,
-                        maxHeight: 280, display: 'flex', flexDirection: 'column', overflow: 'hidden',
-                        zIndex: 200, boxShadow: '0 6px 20px #00000044' }}>
+                      <div style={{ position: 'absolute', top: 'calc(100% + 6px)', left: 0, right: 0,
+                        background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12,
+                        maxHeight: 350, display: 'flex', flexDirection: 'column', overflow: 'hidden',
+                        zIndex: 200, boxShadow: '0 8px 24px #00000055' }}>
                         {showMany && (
-                          <div style={{ padding: '8px 10px', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
+                          <div style={{ padding: '10px 12px', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
                             <input autoFocus value={boxSearch} onChange={e => setBoxSearch(e.target.value)}
-                              placeholder="Suchen…"
-                              style={{ width: '100%', padding: '4px 8px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', fontSize: 13 }} />
+                              placeholder="Bereich suchen…"
+                              style={{ width: '100%', padding: '6px 10px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', fontSize: 14 }} />
                           </div>
                         )}
                         <div style={{ overflowY: 'auto', flex: 1, minHeight: 0 }}>
@@ -576,29 +576,37 @@ export default function Home({ onOpenEntry, onStartReview, onShowImpressum, onSh
                             <div key={bereich.id}>
                               <button
                                 onClick={() => { setSaveToBox(bereich); setSaveError(''); setBoxDropdownOpen(false); setBoxSearch(''); }}
-                                style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px',
+                                style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px',
                                   background: saveToBox?.id === bereich.id ? bereich.color + '22' : 'transparent',
                                   color: saveToBox?.id === bereich.id ? bereich.color : 'var(--text)',
-                                  fontWeight: saveToBox?.id === bereich.id ? 700 : 500, fontSize: 13, textAlign: 'left',
-                                  borderBottom: '1px solid var(--border)11' }}>
-                                <span style={{ fontSize: 16 }}>{bereich.icon}</span>
+                                  fontWeight: saveToBox?.id === bereich.id ? 700 : 600, fontSize: 14, textAlign: 'left',
+                                  borderBottom: '1px solid var(--border)' }}>
+                                <span style={{ fontSize: 18 }}>{bereich.icon}</span>
                                 <span style={{ flex: 1 }}>{bereich.name}</span>
-                                {saveToBox?.id === bereich.id && <span style={{ fontSize: 11 }}>✓</span>}
+                                <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 400 }}>{bereich.card_count ?? 0} Eintr.</span>
+                                {saveToBox?.id === bereich.id && <span style={{ color: bereich.color }}>✓</span>}
                               </button>
                               {!filteredTree && (bereich.children || []).map(box => (
                                 <button key={box.id}
                                   onClick={() => { setSaveToBox(box); setSaveError(''); setBoxDropdownOpen(false); setBoxSearch(''); }}
-                                  style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '6px 12px 6px 32px',
+                                  style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px 8px 38px',
                                     background: saveToBox?.id === box.id ? box.color + '22' : 'transparent',
                                     color: saveToBox?.id === box.id ? box.color : 'var(--text-muted)',
-                                    fontWeight: saveToBox?.id === box.id ? 700 : 400, fontSize: 12, textAlign: 'left' }}>
+                                    fontWeight: saveToBox?.id === box.id ? 700 : 400, fontSize: 13, textAlign: 'left',
+                                    borderBottom: '1px solid var(--border)22' }}>
                                   <span>{box.icon}</span>
                                   <span style={{ flex: 1 }}>{box.name}</span>
-                                  {saveToBox?.id === box.id && <span style={{ fontSize: 11 }}>✓</span>}
+                                  <span style={{ fontSize: 11, opacity: 0.6 }}>{box.card_count ?? 0}</span>
+                                  {saveToBox?.id === box.id && <span style={{ color: box.color }}>✓</span>}
                                 </button>
                               ))}
                             </div>
                           ))}
+                          {(filteredTree || tree).length === 0 && (
+                            <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)', fontSize: 13 }}>
+                              Kein Bereich gefunden
+                            </div>
+                          )}
                         </div>
                       </div>
                     )}
