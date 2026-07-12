@@ -413,10 +413,13 @@ export default function Home({ onOpenEntry, onStartReview, onShowImpressum, onSh
     : allBoxes.filter(b => !b.parent_id);
 
   return (
-    <div className="main-wrap" style={{ maxWidth: 780, margin: '0 auto', padding: '28px 20px' }}>
+    <div className="main-wrap" style={{ maxWidth: 780, margin: '0 auto', padding: '0 20px 28px' }}>
+
+      {/* Sticky: Header + Capture */}
+      <div style={{ position: 'sticky', top: 0, zIndex: 100, background: 'var(--bg)', paddingTop: 28, paddingBottom: 20 }}>
 
       {/* HEADER / BREADCRUMB */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 22 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20, minHeight: 56 }}>
         {crumbLabel ? (
           <>
             <button onClick={goHome}
@@ -478,7 +481,7 @@ export default function Home({ onOpenEntry, onStartReview, onShowImpressum, onSh
 
       {/* SCHNELLEINGABE */}
       <div style={{
-        background: 'var(--surface)', borderRadius: 16, marginBottom: 28,
+        background: 'var(--surface)', borderRadius: 16, marginBottom: 0,
         border: `1.5px solid ${focused ? accentColor : 'var(--border)'}`,
         boxShadow: focused ? `0 0 0 3px ${accentColor}18` : 'none',
         transition: 'border-color 0.2s, box-shadow 0.2s', overflow: 'hidden',
@@ -557,10 +560,10 @@ export default function Home({ onOpenEntry, onStartReview, onShowImpressum, onSh
                     </button>
 
                     {boxDropdownOpen && (
-                      <div style={{ position: 'absolute', bottom: 'calc(100% + 4px)', left: 0, right: 0,
+                      <div style={{ position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0,
                         background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10,
-                        maxHeight: 280, display: 'flex', flexDirection: 'column',
-                        zIndex: 200, boxShadow: '0 -6px 20px #00000044' }}>
+                        maxHeight: 280, display: 'flex', flexDirection: 'column', overflow: 'hidden',
+                        zIndex: 200, boxShadow: '0 6px 20px #00000044' }}>
                         {showMany && (
                           <div style={{ padding: '8px 10px', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
                             <input autoFocus value={boxSearch} onChange={e => setBoxSearch(e.target.value)}
@@ -568,7 +571,7 @@ export default function Home({ onOpenEntry, onStartReview, onShowImpressum, onSh
                               style={{ width: '100%', padding: '4px 8px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', fontSize: 13 }} />
                           </div>
                         )}
-                        <div style={{ overflowY: 'auto' }}>
+                        <div style={{ overflowY: 'auto', flex: 1, minHeight: 0 }}>
                           {(filteredTree || tree).map(bereich => (
                             <div key={bereich.id}>
                               <button
@@ -620,6 +623,8 @@ export default function Home({ onOpenEntry, onStartReview, onShowImpressum, onSh
           )}
         </div>
       </div>
+
+      </div>{/* Ende sticky wrapper */}
 
       {/* KI-WISSENSGENERIERUNG */}
       <div style={{ marginBottom: 28 }}>
