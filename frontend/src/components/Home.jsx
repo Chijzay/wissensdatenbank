@@ -255,17 +255,28 @@ export default function Home({ onOpenEntry, onStartReview, onShowImpressum, onSh
     return n;
   });
 
-  // Doppelklick-Timer für Bereiche: erster Klick wartet 380ms.
-  // Zweiter Klick innerhalb 380ms → navigieren. Timer abgelaufen → expand.
   const handleBereichClick = (bereich) => {
+    const hasChildren = allBoxes.some(b => b.parent_id === bereich.id);
+    const writingNow = !!content.trim();
+
     if (bereichClickTimers.current[bereich.id]) {
+      // Zweiter Klick innerhalb 380ms → in Bereich navigieren
       clearTimeout(bereichClickTimers.current[bereich.id]);
       delete bereichClickTimers.current[bereich.id];
       navigateToBereich(bereich);
     } else {
       bereichClickTimers.current[bereich.id] = setTimeout(() => {
         delete bereichClickTimers.current[bereich.id];
-        toggleExpand(bereich.id);
+        if (!hasChildren) {
+          // Keine Sub-Boxen: Bereich als Speicherziel aus-/abwählen
+          setSaveToBox(prev => prev?.id === bereich.id ? null : bereich);
+        } else if (writingNow) {
+          // Inhalt wird gerade getippt: aufklappen damit Sub-Box wählbar ist
+          setExpanded(prev => new Set([...prev, bereich.id]));
+        } else {
+          // Hat Sub-Boxen, nichts in Eingabe: auf-/zuklappen
+          toggleExpand(bereich.id);
+        }
       }, 380);
     }
   };
@@ -757,7 +768,12 @@ export default function Home({ onOpenEntry, onStartReview, onShowImpressum, onSh
                           onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.opacity = '0.4'; }}>
                           <Trash2 size={13} />
                         </button>
-                        <button onClick={e => { e.stopPropagation(); toggleExpand(bereich.id); }}
+                        <button onClick={e => {
+                            e.stopPropagation();
+                            clearTimeout(bereichClickTimers.current[bereich.id]);
+                            delete bereichClickTimers.current[bereich.id];
+                            toggleExpand(bereich.id);
+                          }}
                           style={{ padding: 6, borderRadius: 6, color: 'var(--text-muted)', transition: 'transform 0.2s', transform: isExpanded ? 'rotate(90deg)' : 'none' }}>
                           <ChevronRight size={16} />
                         </button>
