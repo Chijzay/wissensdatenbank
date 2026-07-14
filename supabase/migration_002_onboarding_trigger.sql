@@ -27,7 +27,7 @@ BEGIN
     v_box_id,
     NEW.id,
     'Willkommen in deiner Wissens-App!',
-    E'## Deine persönliche Wissensdatenbank\n\nHier kannst du dein Wissen strukturiert festhalten und jederzeit darauf zugreifen.\n\n**So funktioniert es:**\n\n1. **Bereiche** sind deine übergeordneten Wissensgebiete (z.\xa0B. „Informatik", „Sprachen")\n2. **Boxen** sind Unterthemen innerhalb eines Bereichs\n3. **Karten** sind einzelne Einträge mit Wissen, Notizen oder Lernstoff\n\n**Erste Schritte:**\n- Schreibe dein erstes Wissen in das Eingabefeld oben\n- Erstelle neue Bereiche über das **Grid-Symbol** rechts oben\n- Nutze die **KI-Funktion** für automatisch generierte Einträge\n- Mit **Diktieren** kannst du Einträge per Sprache erfassen\n\nViel Spaß beim Lernen! 🚀',
+    E'## Deine persönliche Wissensdatenbank\n\nHier kannst du dein Wissen strukturiert festhalten und jederzeit darauf zugreifen.\n\n**So funktioniert es:**\n\n1. **Bereiche** sind deine übergeordneten Wissensgebiete (z. B. Informatik, Sprachen)\n2. **Boxen** sind Unterthemen innerhalb eines Bereichs\n3. **Karten** sind einzelne Einträge mit Wissen, Notizen oder Lernstoff\n\n**Erste Schritte:**\n- Schreibe dein erstes Wissen in das Eingabefeld oben\n- Erstelle neue Bereiche über das **Grid-Symbol** rechts oben\n- Nutze die **KI-Funktion** für automatisch generierte Einträge\n- Mit **Diktieren** kannst du Einträge per Sprache erfassen\n\nViel Spaß beim Lernen!',
     '[]',
     'Einführung'
   );
