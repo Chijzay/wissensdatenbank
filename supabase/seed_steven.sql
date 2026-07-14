@@ -1,4 +1,4 @@
--- ================================================================
+﻿-- ================================================================
 -- Seed: Informatik + Scrum Lernkarten für steven.illg.it@outlook.com
 -- Im Supabase SQL-Editor ausführen — NACH migration_001
 -- ================================================================
@@ -39,7 +39,7 @@ BEGIN
 
   INSERT INTO cards (box_id, user_id, title, content, tags, category) VALUES
   (v_itmathe, v_uid, 'Big-O-Notation',
-$$**Big-O** beschreibt das **Wachstumsverhalten** eines Algorithmus in Abhängigkeit von der Eingabegröße n — unabhängig von Hardware und Konstanten.
+$C$**Big-O** beschreibt das **Wachstumsverhalten** eines Algorithmus in Abhängigkeit von der Eingabegröße n — unabhängig von Hardware und Konstanten.
 
 | Notation | Name | Beispiel |
 |---|---|---|
@@ -53,11 +53,11 @@ $$**Big-O** beschreibt das **Wachstumsverhalten** eines Algorithmus in Abhängig
 **Regeln:**
 - Konstanten werden ignoriert: O(3n) → O(n)
 - Nur der dominante Term zählt: O(n² + n) → O(n²)
-- Best / Average / Worst Case sind unterschiedlich — O beschreibt meist den Worst Case$$,
+- Best / Average / Worst Case sind unterschiedlich — O beschreibt meist den Worst Case$C$,
    '["Algorithmen","Komplexität","Laufzeit"]', 'Algorithmen'),
 
   (v_itmathe, v_uid, 'Binärzahlen',
-$$Das **Binärsystem** ist ein Stellenwertsystem zur Basis 2 — Computer arbeiten intern ausschließlich damit.
+$C$Das **Binärsystem** ist ein Stellenwertsystem zur Basis 2 — Computer arbeiten intern ausschließlich damit.
 
 **Umrechnung Dezimal → Binär:** Wiederholt durch 2 dividieren, Reste von unten lesen.
 `13 → 1101₂` (13 = 8+4+1)
@@ -72,11 +72,11 @@ $$Das **Binärsystem** ist ein Stellenwertsystem zur Basis 2 — Computer arbeit
 - **LSB** = Least Significant Bit (ganz rechts)
 
 **Addition:** Wie im Dezimalsystem, aber Übertrag bei 2:
-`1 + 1 = 10₂` (0, Übertrag 1)$$,
+`1 + 1 = 10₂` (0, Übertrag 1)$C$,
    '["Binär","Zahlensysteme","Grundlagen"]', 'Zahlensysteme'),
 
   (v_itmathe, v_uid, 'Hexadezimalzahlen',
-$$Das **Hexadezimalsystem** (Basis 16) wird in der IT für kompakte Darstellung von Binärwerten verwendet.
+$C$Das **Hexadezimalsystem** (Basis 16) wird in der IT für kompakte Darstellung von Binärwerten verwendet.
 
 **Ziffern:** 0–9, dann A=10, B=11, C=12, D=13, E=14, F=15
 
@@ -92,11 +92,11 @@ $$Das **Hexadezimalsystem** (Basis 16) wird in der IT für kompakte Darstellung 
 - Bytecodes, Hashwerte, MAC-Adressen
 - IPv6-Adressen
 
-**Präfixe:** `0x` (C/Java), `#` (CSS/Farben), `h` (Assembler)$$,
+**Präfixe:** `0x` (C/Java), `#` (CSS/Farben), `h` (Assembler)$C$,
    '["Hexadezimal","Zahlensysteme","Darstellung"]', 'Zahlensysteme'),
 
   (v_itmathe, v_uid, 'Bitoperationen',
-$$**Bitoperationen** arbeiten direkt auf den einzelnen Bits einer Ganzzahl.
+$C$**Bitoperationen** arbeiten direkt auf den einzelnen Bits einer Ganzzahl.
 
 | Op | Zeichen | Funktion | Beispiel |
 |---|---|---|---|
@@ -111,11 +111,11 @@ $$**Bitoperationen** arbeiten direkt auf den einzelnen Bits einer Ganzzahl.
 - Flags/Berechtigungen: `permissions & READ_FLAG`
 - Schnelles Multiplizieren/Dividieren durch 2er-Potenzen: `n << 1` = n×2
 - Prüfen ob Zahl gerade: `n & 1 == 0`
-- Farb-Channels extrahieren: `color >> 16 & 0xFF`$$,
+- Farb-Channels extrahieren: `color >> 16 & 0xFF`$C$,
    '["Bitoperationen","Binär","Low-Level"]', 'Grundlagen'),
 
   (v_itmathe, v_uid, 'Aussagenlogik',
-$$Die **Aussagenlogik** (Boolesche Logik) beschäftigt sich mit Aussagen, die wahr (W) oder falsch (F) sind.
+$C$Die **Aussagenlogik** (Boolesche Logik) beschäftigt sich mit Aussagen, die wahr (W) oder falsch (F) sind.
 
 **Grundoperatoren:**
 
@@ -130,11 +130,11 @@ $$Die **Aussagenlogik** (Boolesche Logik) beschäftigt sich mit Aussagen, die wa
 
 **Tautologie:** Immer wahr, z. B. `A ∨ ¬A`
 **Kontradiktion:** Immer falsch, z. B. `A ∧ ¬A`
-**De Morgan:** `¬(A ∧ B) = ¬A ∨ ¬B`$$,
+**De Morgan:** `¬(A ∧ B) = ¬A ∨ ¬B`$C$,
    '["Logik","Boolesch","Mathematik"]', 'Mathematik'),
 
   (v_itmathe, v_uid, 'Mengen und Mengenoperationen',
-$$Eine **Menge** ist eine Sammlung eindeutiger Elemente: `M = {1, 2, 3}`
+$C$Eine **Menge** ist eine Sammlung eindeutiger Elemente: `M = {1, 2, 3}`
 
 **Operationen:**
 - **Vereinigung** A ∪ B: alle Elemente aus A oder B
@@ -150,11 +150,11 @@ $$Eine **Menge** ist eine Sammlung eindeutiger Elemente: `M = {1, 2, 3}`
 - `⊂` = Echte Teilmenge: `{1,2} ⊂ {1,2,3}`
 - `|A|` = Kardinalität (Anzahl Elemente)
 
-**In der Informatik:** Datenbankoperationen (JOIN, UNION), Filterlogik, Graphentheorie$$,
+**In der Informatik:** Datenbankoperationen (JOIN, UNION), Filterlogik, Graphentheorie$C$,
    '["Mengen","Mathematik","Diskrete Mathematik"]', 'Mathematik'),
 
   (v_itmathe, v_uid, 'Graphen und Graphentheorie',
-$$Ein **Graph** G = (V, E) besteht aus **Knoten** (Vertices V) und **Kanten** (Edges E).
+$C$Ein **Graph** G = (V, E) besteht aus **Knoten** (Vertices V) und **Kanten** (Edges E).
 
 **Typen:**
 - **Ungerichtet:** Kanten ohne Richtung (A–B)
@@ -172,11 +172,11 @@ $$Ein **Graph** G = (V, E) besteht aus **Knoten** (Vertices V) und **Kanten** (E
 - Adjazenzmatrix: 2D-Array, platzsparend bei dichten Graphen
 - Adjazenzliste: Liste pro Knoten, gut für dünn besetzte Graphen
 
-**Algorithmen:** BFS, DFS, Dijkstra (kürzester Weg), Kruskal/Prim (minimaler Spannbaum)$$,
+**Algorithmen:** BFS, DFS, Dijkstra (kürzester Weg), Kruskal/Prim (minimaler Spannbaum)$C$,
    '["Graphen","Algorithmen","Datenstrukturen"]', 'Datenstrukturen'),
 
   (v_itmathe, v_uid, 'Rekursion',
-$$**Rekursion** = eine Funktion ruft sich selbst auf. Jede Rekursion braucht:
+$C$**Rekursion** = eine Funktion ruft sich selbst auf. Jede Rekursion braucht:
 1. **Basisfall** (Abbruchbedingung)
 2. **Rekursiver Schritt** (Problem verkleinern)
 
@@ -198,11 +198,11 @@ def fakultaet(n):
 - Backtracking (Sudoku, N-Queens)
 - Parsing verschachtelter Strukturen (JSON, XML)
 
-**Memoization:** Ergebnisse cachen → vermeidet redundante Berechnungen (Dynamic Programming)$$,
+**Memoization:** Ergebnisse cachen → vermeidet redundante Berechnungen (Dynamic Programming)$C$,
    '["Rekursion","Algorithmen","Programmierung"]', 'Algorithmen'),
 
   (v_itmathe, v_uid, 'Vollständige Induktion',
-$$Die **vollständige Induktion** beweist, dass eine Aussage für alle natürlichen Zahlen gilt.
+$C$Die **vollständige Induktion** beweist, dass eine Aussage für alle natürlichen Zahlen gilt.
 
 **Schema:**
 1. **Induktionsanfang (IA):** Aussage für n=0 (oder n=1) zeigen
@@ -215,11 +215,11 @@ $$Die **vollständige Induktion** beweist, dass eine Aussage für alle natürlic
 *IV:* Gilt für k: 1+…+k = k(k+1)/2
 *IS:* 1+…+k+(k+1) = k(k+1)/2 + (k+1) = (k+1)(k+2)/2 ✓
 
-**In der Informatik:** Korrektheitsbeweise für Algorithmen, Datenbanktheoreme, Laufzeitanalysen$$,
+**In der Informatik:** Korrektheitsbeweise für Algorithmen, Datenbanktheoreme, Laufzeitanalysen$C$,
    '["Induktion","Beweise","Mathematik"]', 'Mathematik'),
 
   (v_itmathe, v_uid, 'Modulo-Arithmetik',
-$$Der **Modulo-Operator** (`%`) gibt den Rest einer ganzzahligen Division zurück.
+$C$Der **Modulo-Operator** (`%`) gibt den Rest einer ganzzahligen Division zurück.
 
 `17 % 5 = 2` (da 17 = 3×5 + 2)
 
@@ -236,11 +236,11 @@ Beispiel: `17 ≡ 2 (mod 5)`
 **Wichtige Eigenschaft:** `(a + b) % n = ((a % n) + (b % n)) % n`
 
 **Negative Zahlen:** Achtung — Verhalten je nach Sprache unterschiedlich!
-Python: `-7 % 3 = 2` | Java/C: `-7 % 3 = -1`$$,
+Python: `-7 % 3 = 2` | Java/C: `-7 % 3 = -1`$C$,
    '["Modulo","Arithmetik","Kryptographie"]', 'Mathematik'),
 
   (v_itmathe, v_uid, 'Hash-Funktionen',
-$$Eine **Hash-Funktion** bildet Daten beliebiger Länge auf einen Wert fixer Länge ab (Hash/Digest).
+$C$Eine **Hash-Funktion** bildet Daten beliebiger Länge auf einen Wert fixer Länge ab (Hash/Digest).
 
 **Eigenschaften einer kryptografischen Hash-Funktion:**
 - **Deterministisch:** Gleiche Eingabe → immer gleicher Hash
@@ -255,11 +255,11 @@ $$Eine **Hash-Funktion** bildet Daten beliebiger Länge auf einen Wert fixer Lä
 - SHA-256 → 256 Bit (sicher, Standard)
 - bcrypt / Argon2 → für Passwörter (absichtlich langsam)
 
-**Anwendungen:** Passwort-Speicherung, Dateiintegrität, Signaturen, Blockchain, Hash-Tables$$,
+**Anwendungen:** Passwort-Speicherung, Dateiintegrität, Signaturen, Blockchain, Hash-Tables$C$,
    '["Hash","Kryptographie","Sicherheit"]', 'Kryptographie'),
 
   (v_itmathe, v_uid, 'Kombinatorik',
-$$Die **Kombinatorik** zählt Anordnungen und Auswahlen von Elementen.
+$C$Die **Kombinatorik** zählt Anordnungen und Auswahlen von Elementen.
 
 **Grundformeln:**
 
@@ -278,11 +278,11 @@ $$\binom{n+k-1}{k}$$
 **Beispiele:**
 - Passwort (6 Stellen, 26 Buchstaben): 26⁶ ≈ 309 Mio
 - Lotto 6 aus 49: C(49,6) = 13.983.816
-- Anagramme von "ANNA": 4!/(2!·2!) = 6$$,
+- Anagramme von "ANNA": 4!/(2!·2!) = 6$C$,
    '["Kombinatorik","Wahrscheinlichkeit","Mathematik"]', 'Mathematik'),
 
   (v_itmathe, v_uid, 'Wahrscheinlichkeitsrechnung',
-$$**Wahrscheinlichkeit** P(A) gibt an, wie wahrscheinlich Ereignis A eintritt.
+$C$**Wahrscheinlichkeit** P(A) gibt an, wie wahrscheinlich Ereignis A eintritt.
 `0 ≤ P(A) ≤ 1`
 
 **Grundregeln:**
@@ -300,11 +300,11 @@ $$P(A|B) = \frac{P(B|A) \cdot P(A)}{P(B)}$$
 - Spam-Filter (Naiver Bayes-Klassifikator)
 - A/B-Tests (statistische Signifikanz)
 - Maschinelles Lernen (probabilistische Modelle)
-- Zufallsalgorithmen (Randomized Quicksort, Monte Carlo)$$,
+- Zufallsalgorithmen (Randomized Quicksort, Monte Carlo)$C$,
    '["Wahrscheinlichkeit","Statistik","Mathematik"]', 'Mathematik'),
 
   (v_itmathe, v_uid, 'P vs. NP Problem',
-$$Eines der größten ungelösten Probleme der Informatik.
+$C$Eines der größten ungelösten Probleme der Informatik.
 
 **P** = Klasse der Probleme, die **polynomial lösbar** sind (O(nᵏ))
 → Effizient lösbar, z. B. Sortieren, kürzeste Wege
@@ -321,11 +321,11 @@ Beispiele: SAT, Clique-Problem, Rucksackproblem
 
 **Praxisrelevanz:**
 - Kryptographie basiert auf der Annahme P≠NP
-- NP-schwere Probleme werden mit Heuristiken / Approximation gelöst$$,
+- NP-schwere Probleme werden mit Heuristiken / Approximation gelöst$C$,
    '["Komplexität","Theorie","Informatik"]', 'Algorithmen'),
 
   (v_itmathe, v_uid, 'Endliche Automaten (DFA)',
-$$Ein **deterministischer endlicher Automat (DFA)** erkennt reguläre Sprachen.
+$C$Ein **deterministischer endlicher Automat (DFA)** erkennt reguläre Sprachen.
 
 **Komponenten** M = (Q, Σ, δ, q₀, F):
 - **Q** = endliche Menge von Zuständen
@@ -346,7 +346,7 @@ Eingabe akzeptiert wenn Endzustand nach letztem Zeichen erreicht.
 - Lexer/Parser (Compilerbau)
 - Regex-Engines
 - Protokollmodellierung
-- Textsuchalgorithmen$$,
+- Textsuchalgorithmen$C$,
    '["Automaten","Theorie","Formale Sprachen"]', 'Theoretische Informatik');
 
   -- ════════════════════════════════════════════════════════════════
@@ -355,7 +355,7 @@ Eingabe akzeptiert wenn Endzustand nach letztem Zeichen erreicht.
 
   INSERT INTO cards (box_id, user_id, title, content, tags, category) VALUES
   (v_azure, v_uid, 'Microsoft Entra ID (Azure AD)',
-$$**Microsoft Entra ID** (früher Azure Active Directory) ist der cloud-basierte Identity & Access Management Service von Microsoft.
+$C$**Microsoft Entra ID** (früher Azure Active Directory) ist der cloud-basierte Identity & Access Management Service von Microsoft.
 
 **Kernfunktionen:**
 - **Authentifizierung:** SSO (Single Sign-On), MFA, OAuth 2.0, OIDC
@@ -371,11 +371,11 @@ $$**Microsoft Entra ID** (früher Azure Active Directory) ist der cloud-basierte
 
 **Protokolle:** OAuth 2.0, OIDC, SAML 2.0, WS-Federation
 
-**Unterschied zu on-prem AD:** Entra ID ist cloud-native, kein LDAP/Kerberos, kein Gruppenrichtlinien-GPO$$,
+**Unterschied zu on-prem AD:** Entra ID ist cloud-native, kein LDAP/Kerberos, kein Gruppenrichtlinien-GPO$C$,
    '["Azure","Identity","Sicherheit","EntraID"]', 'Azure Grundlagen'),
 
   (v_azure, v_uid, 'Azure Virtual Machines',
-$$**Azure VMs** bieten IaaS (Infrastructure as a Service) — vollständige Kontrolle über OS, Software und Konfiguration.
+$C$**Azure VMs** bieten IaaS (Infrastructure as a Service) — vollständige Kontrolle über OS, Software und Konfiguration.
 
 **VM-Größen (Series):**
 - **B-Serie:** Burst-fähig, für dev/test (günstig)
@@ -393,11 +393,11 @@ $$**Azure VMs** bieten IaaS (Infrastructure as a Service) — vollständige Kont
 **Wichtig:**
 - VMs werden pro Stunde abgerechnet (auch gestoppte VMs zahlen Speicher!)
 - **Deallocate** statt Stop → spart Compute-Kosten
-- Images für schnelles Bereitstellen nutzen$$,
+- Images für schnelles Bereitstellen nutzen$C$,
    '["Azure","IaaS","VM","Compute"]', 'Compute'),
 
   (v_azure, v_uid, 'Azure Blob Storage',
-$$**Azure Blob Storage** ist Microsofts Object Storage für unstrukturierte Daten.
+$C$**Azure Blob Storage** ist Microsofts Object Storage für unstrukturierte Daten.
 
 **Hierarchie:**
 `Storage Account → Container → Blob`
@@ -417,11 +417,11 @@ $$**Azure Blob Storage** ist Microsofts Object Storage für unstrukturierte Date
 
 **Zugriff:** SAS-Token, Storage Account Key, Azure AD (RBAC), Managed Identity
 
-**Redundanz:** LRS → ZRS → GRS → GZRS (lokal bis geo-redundant)$$,
+**Redundanz:** LRS → ZRS → GRS → GZRS (lokal bis geo-redundant)$C$,
    '["Azure","Storage","Blob","Cloud"]', 'Storage'),
 
   (v_azure, v_uid, 'Azure App Service',
-$$**Azure App Service** ist eine PaaS-Plattform für Web-Apps, REST-APIs und mobile Backends.
+$C$**Azure App Service** ist eine PaaS-Plattform für Web-Apps, REST-APIs und mobile Backends.
 
 **Unterstützte Laufzeiten:** .NET, Node.js, Python, Java, PHP, Ruby, Container
 
@@ -442,11 +442,11 @@ $$**Azure App Service** ist eine PaaS-Plattform für Web-Apps, REST-APIs und mob
 
 **Deployment:** GitHub Actions, Azure DevOps, ZIP Deploy, Docker Container, FTP
 
-**Konfiguration:** App Settings (Env Vars), Connection Strings, TLS/SSL, Custom Domains$$,
+**Konfiguration:** App Settings (Env Vars), Connection Strings, TLS/SSL, Custom Domains$C$,
    '["Azure","PaaS","WebApp","Deployment"]', 'Compute'),
 
   (v_azure, v_uid, 'Azure Functions (Serverless)',
-$$**Azure Functions** = Serverless Compute. Code ausführen ohne Server verwalten zu müssen.
+$C$**Azure Functions** = Serverless Compute. Code ausführen ohne Server verwalten zu müssen.
 
 **Trigger-Typen:**
 - **HTTP Trigger:** REST-Endpunkt
@@ -466,11 +466,11 @@ $$**Azure Functions** = Serverless Compute. Code ausführen ohne Server verwalte
 - **Activity Function:** Einzelner Arbeitsschritt
 - **Entity Function:** Zustandsobjekte
 
-**Limits:** 10 Min Timeout (Consumption), 230 Sek HTTP-Timeout$$,
+**Limits:** 10 Min Timeout (Consumption), 230 Sek HTTP-Timeout$C$,
    '["Azure","Serverless","Functions","FaaS"]', 'Compute'),
 
   (v_azure, v_uid, 'Azure Kubernetes Service (AKS)',
-$$**AKS** = verwaltetes Kubernetes in Azure. Die Control Plane wird von Azure kostenlos verwaltet.
+$C$**AKS** = verwaltetes Kubernetes in Azure. Die Control Plane wird von Azure kostenlos verwaltet.
 
 **Komponenten:**
 - **Node Pool:** Gruppe identischer VMs (Nodes)
@@ -491,11 +491,11 @@ $$**AKS** = verwaltetes Kubernetes in Azure. Die Control Plane wird von Azure ko
 **Auto-Scaler:**
 - **Cluster Autoscaler:** Nodes hinzufügen/entfernen
 - **HPA:** Pods skalieren
-- **KEDA:** Event-driven Autoscaling$$,
+- **KEDA:** Event-driven Autoscaling$C$,
    '["Azure","Kubernetes","AKS","Container"]', 'Container'),
 
   (v_azure, v_uid, 'Azure DevOps',
-$$**Azure DevOps** ist eine DevOps-Plattform mit integrierten Tools für den gesamten SDLC.
+$C$**Azure DevOps** ist eine DevOps-Plattform mit integrierten Tools für den gesamten SDLC.
 
 **Module:**
 | Service | Funktion |
@@ -521,11 +521,11 @@ pool:
 steps:
   - script: npm test
   - task: AzureWebApp@1
-```$$,
+```$C$,
    '["Azure","DevOps","CI/CD","Pipeline"]', 'DevOps'),
 
   (v_azure, v_uid, 'Azure Key Vault',
-$$**Azure Key Vault** sichert Secrets, Schlüssel und Zertifikate zentral und sicher.
+$C$**Azure Key Vault** sichert Secrets, Schlüssel und Zertifikate zentral und sicher.
 
 **3 Arten von Inhalten:**
 - **Secrets:** Passwörter, Connection Strings, API Keys
@@ -544,11 +544,11 @@ $$**Azure Key Vault** sichert Secrets, Schlüssel und Zertifikate zentral und si
 
 **Audit:** Alle Zugriffe werden in Activity Logs erfasst
 **Soft Delete:** Gelöschte Objekte 90 Tage wiederherstellbar
-**Purge Protection:** Verhindert sofortiges endgültiges Löschen$$,
+**Purge Protection:** Verhindert sofortiges endgültiges Löschen$C$,
    '["Azure","Sicherheit","KeyVault","Secrets"]', 'Sicherheit'),
 
   (v_azure, v_uid, 'RBAC in Azure',
-$$**RBAC** (Role-Based Access Control) steuert Zugriff auf Azure-Ressourcen über Rollen.
+$C$**RBAC** (Role-Based Access Control) steuert Zugriff auf Azure-Ressourcen über Rollen.
 
 **Konzepte:**
 - **Security Principal:** Wer? (User, Group, Service Principal, Managed Identity)
@@ -566,11 +566,11 @@ $$**RBAC** (Role-Based Access Control) steuert Zugriff auf Azure-Ressourcen übe
 
 **Prinzip:** Least Privilege — so wenig Rechte wie nötig
 **Deny Assignments:** Explizit Zugriff verweigern (überschreibt RBAC-Allow)
-**Custom Roles:** Eigene Rollendefinitionen über JSON$$,
+**Custom Roles:** Eigene Rollendefinitionen über JSON$C$,
    '["Azure","RBAC","Sicherheit","IAM"]', 'Sicherheit'),
 
   (v_azure, v_uid, 'Azure Monitor & Log Analytics',
-$$**Azure Monitor** ist die zentrale Plattform für Monitoring und Observability in Azure.
+$C$**Azure Monitor** ist die zentrale Plattform für Monitoring und Observability in Azure.
 
 **Datenquellen:**
 - Azure Ressourcen (Metrics, Activity Logs)
@@ -595,11 +595,11 @@ AzureActivity
 - Log Alert: KQL-Abfrage → Schwellenwert
 - Activity Log Alert: Ressource gelöscht
 
-**Application Insights:** APM für Web-Apps (Request-Traces, Exceptions, Abhängigkeiten)$$,
+**Application Insights:** APM für Web-Apps (Request-Traces, Exceptions, Abhängigkeiten)$C$,
    '["Azure","Monitoring","Logging","Observability"]', 'Operations'),
 
   (v_azure, v_uid, 'Azure Virtual Network (VNet)',
-$$Ein **Virtual Network (VNet)** ist das private Netzwerk in Azure — isoliert und sicher.
+$C$Ein **Virtual Network (VNet)** ist das private Netzwerk in Azure — isoliert und sicher.
 
 **Kernkonzepte:**
 - **Address Space:** IP-Bereich des VNet (z. B. `10.0.0.0/16`)
@@ -618,11 +618,11 @@ $$Ein **Virtual Network (VNet)** ist das private Netzwerk in Azure — isoliert 
 **Wichtige Ports:**
 - RDP: 3389 (Windows VMs)
 - SSH: 22 (Linux VMs)
-- HTTP/HTTPS: 80/443$$,
+- HTTP/HTTPS: 80/443$C$,
    '["Azure","Netzwerk","VNet","Sicherheit"]', 'Netzwerk'),
 
   (v_azure, v_uid, 'Azure Container Registry (ACR)',
-$$**Azure Container Registry (ACR)** ist eine private Docker-Registry in Azure.
+$C$**Azure Container Registry (ACR)** ist eine private Docker-Registry in Azure.
 
 **Wozu?**
 - Docker Images sicher und privat hosten
@@ -652,11 +652,11 @@ az acr repository list --name meinregistry
 az acr build --registry meinregistry --image myapp:v1 .
 ```
 
-**Zugriff:** Managed Identity (empfohlen), Admin-Konto, Service Principal$$,
+**Zugriff:** Managed Identity (empfohlen), Admin-Konto, Service Principal$C$,
    '["Azure","Container","ACR","Docker","Registry"]', 'Container'),
 
   (v_azure, v_uid, 'Azure Cosmos DB',
-$$**Azure Cosmos DB** ist eine globally distributed, multi-model NoSQL Datenbank.
+$C$**Azure Cosmos DB** ist eine globally distributed, multi-model NoSQL Datenbank.
 
 **Kernfeatures:**
 - **Globale Verteilung:** Daten in beliebig viele Regionen replizieren
@@ -679,11 +679,11 @@ Strong → Bounded Staleness → Session → Consistent Prefix → Eventual
 - Logische Partitionen max. 20 GB
 - Physische Partitionen auto-skaliert
 
-**Abrechnung:** RU/s (Request Units per Second)$$,
+**Abrechnung:** RU/s (Request Units per Second)$C$,
    '["Azure","CosmosDB","NoSQL","Datenbank"]', 'Datenbanken'),
 
   (v_azure, v_uid, 'ARM Templates & Bicep',
-$$**Infrastructure as Code** für Azure: Ressourcen deklarativ definieren und reproduzierbar deployen.
+$C$**Infrastructure as Code** für Azure: Ressourcen deklarativ definieren und reproduzierbar deployen.
 
 **ARM Templates:** JSON-basiert, verbose
 ```json
@@ -715,7 +715,7 @@ az deployment group create \
   --parameters storageName=meinstorage
 ```
 
-**Alternativen:** Terraform (cloud-agnostisch), Pulumi (imperative Sprachen)$$,
+**Alternativen:** Terraform (cloud-agnostisch), Pulumi (imperative Sprachen)$C$,
    '["Azure","IaC","ARM","Bicep","Infrastructure"]', 'DevOps');
 
   -- ════════════════════════════════════════════════════════════════
@@ -724,7 +724,7 @@ az deployment group create \
 
   INSERT INTO cards (box_id, user_id, title, content, tags, category) VALUES
   (v_kubernetes, v_uid, 'Was ist Kubernetes?',
-$$**Kubernetes (K8s)** ist ein Open-Source-System zur **Orchestrierung** von Container-Workloads.
+$C$**Kubernetes (K8s)** ist ein Open-Source-System zur **Orchestrierung** von Container-Workloads.
 
 **Kernaufgaben:**
 - Container deployen, skalieren, aktualisieren
@@ -747,11 +747,11 @@ Worker Nodes
 └── Container Runtime  ← containerd, CRI-O
 ```
 
-**Entstehung:** Von Google (Borg/Omega), 2014 open-source, seit 2016 bei CNCF$$,
+**Entstehung:** Von Google (Borg/Omega), 2014 open-source, seit 2016 bei CNCF$C$,
    '["Kubernetes","Container","Orchestrierung"]', 'Grundlagen'),
 
   (v_kubernetes, v_uid, 'Pod',
-$$Ein **Pod** ist die kleinste deploybare Einheit in Kubernetes — eine Gruppe von einem oder mehreren Containern.
+$C$Ein **Pod** ist die kleinste deploybare Einheit in Kubernetes — eine Gruppe von einem oder mehreren Containern.
 
 **Eigenschaften:**
 - Container in einem Pod teilen Netzwerk-Namespace (selbe IP) und Volumes
@@ -782,11 +782,11 @@ spec:
 ```
 
 **Multi-Container Pods:** Sidecar-Pattern, Ambassador, Adapter
-**Status:** Pending → Running → Succeeded/Failed/CrashLoopBackOff$$,
+**Status:** Pending → Running → Succeeded/Failed/CrashLoopBackOff$C$,
    '["Kubernetes","Pod","Container"]', 'Workloads'),
 
   (v_kubernetes, v_uid, 'Deployment',
-$$Ein **Deployment** verwaltet eine Menge identischer Pods über ein ReplicaSet.
+$C$Ein **Deployment** verwaltet eine Menge identischer Pods über ein ReplicaSet.
 
 **Kernfunktionen:**
 - Gewünschte Anzahl Replikas (Replicas) sicherstellen
@@ -824,11 +824,11 @@ kubectl apply -f deployment.yaml
 kubectl rollout status deployment/meine-app
 kubectl rollout undo deployment/meine-app
 kubectl scale deployment/meine-app --replicas=5
-```$$,
+```$C$,
    '["Kubernetes","Deployment","Rolling Update"]', 'Workloads'),
 
   (v_kubernetes, v_uid, 'Service',
-$$Ein **Service** stellt Pods unter einer stabilen IP/DNS-Adresse erreichbar (Pods kommen und gehen).
+$C$Ein **Service** stellt Pods unter einer stabilen IP/DNS-Adresse erreichbar (Pods kommen und gehen).
 
 **Service-Typen:**
 
@@ -854,11 +854,11 @@ spec:
 ```
 
 **Service Discovery:** DNS `http://meine-app-svc.namespace.svc.cluster.local`
-**Endpoints:** Service enthält dynamische Liste der Pod-IPs$$,
+**Endpoints:** Service enthält dynamische Liste der Pod-IPs$C$,
    '["Kubernetes","Service","Networking"]', 'Netzwerk'),
 
   (v_kubernetes, v_uid, 'Ingress',
-$$**Ingress** steuert eingehenden HTTP/HTTPS-Traffic in den Cluster — ein externer Einstiegspunkt.
+$C$**Ingress** steuert eingehenden HTTP/HTTPS-Traffic in den Cluster — ein externer Einstiegspunkt.
 
 **Funktionen:**
 - Host-basiertes Routing: `api.example.com` → Service A
@@ -893,11 +893,11 @@ spec:
   tls:
     - hosts: [api.example.com]
       secretName: tls-secret
-```$$,
+```$C$,
    '["Kubernetes","Ingress","Netzwerk","HTTP"]', 'Netzwerk'),
 
   (v_kubernetes, v_uid, 'ConfigMap & Secret',
-$$**ConfigMap** und **Secret** trennen Konfiguration vom Container-Image.
+$C$**ConfigMap** und **Secret** trennen Konfiguration vom Container-Image.
 
 **ConfigMap** für nicht-sensible Daten:
 ```yaml
@@ -941,11 +941,11 @@ volumes:
       name: app-config
 ```
 
-⚠️ Secrets sind nur base64, nicht verschlüsselt — für echte Sicherheit: Sealed Secrets oder External Secrets Operator$$,
+⚠️ Secrets sind nur base64, nicht verschlüsselt — für echte Sicherheit: Sealed Secrets oder External Secrets Operator$C$,
    '["Kubernetes","ConfigMap","Secret","Konfiguration"]', 'Konfiguration'),
 
   (v_kubernetes, v_uid, 'kubectl Grundbefehle',
-$$**kubectl** ist das CLI-Tool zur Steuerung von Kubernetes-Clustern.
+$C$**kubectl** ist das CLI-Tool zur Steuerung von Kubernetes-Clustern.
 
 ```bash
 # Kontext/Cluster
@@ -982,11 +982,11 @@ kubectl scale deployment meine-app --replicas=3
 # Rollout
 kubectl rollout status deployment/meine-app
 kubectl rollout undo deployment/meine-app
-```$$,
+```$C$,
    '["Kubernetes","kubectl","CLI","Commands"]', 'Tools'),
 
   (v_kubernetes, v_uid, 'Namespace',
-$$**Namespaces** partitionieren einen Kubernetes-Cluster in isolierte virtuelle Cluster.
+$C$**Namespaces** partitionieren einen Kubernetes-Cluster in isolierte virtuelle Cluster.
 
 **Einsatzzwecke:**
 - Teams/Projekte trennen (team-a, team-b)
@@ -1021,11 +1021,11 @@ spec:
     requests.memory: 16Gi
 ```
 
-⚠️ Namespaces sind KEIN Sicherheitsmerkmal — Netzwerk-Policies separat konfigurieren$$,
+⚠️ Namespaces sind KEIN Sicherheitsmerkmal — Netzwerk-Policies separat konfigurieren$C$,
    '["Kubernetes","Namespace","Organisation"]', 'Grundlagen'),
 
   (v_kubernetes, v_uid, 'Helm',
-$$**Helm** ist der Paketmanager für Kubernetes — wie apt/npm, aber für K8s-Manifeste.
+$C$**Helm** ist der Paketmanager für Kubernetes — wie apt/npm, aber für K8s-Manifeste.
 
 **Konzepte:**
 - **Chart:** Paket von Kubernetes-Manifesten + Templates
@@ -1068,11 +1068,11 @@ my-chart/
 ├── Chart.yaml       # Metadaten
 ├── values.yaml      # Standardwerte
 └── templates/       # Kubernetes-Manifeste mit Go-Templates
-```$$,
+```$C$,
    '["Kubernetes","Helm","Paketmanager","Tools"]', 'Tools'),
 
   (v_kubernetes, v_uid, 'StatefulSet & DaemonSet',
-$$**StatefulSet** und **DaemonSet** sind spezialisierte Workload-Typen.
+$C$**StatefulSet** und **DaemonSet** sind spezialisierte Workload-Typen.
 
 ## StatefulSet
 Für **zustandsbehaftete Anwendungen** (Datenbanken, Queues).
@@ -1104,11 +1104,11 @@ spec:
     spec:
       nodeSelector:
         kubernetes.io/os: linux
-```$$,
+```$C$,
    '["Kubernetes","StatefulSet","DaemonSet","Workloads"]', 'Workloads'),
 
   (v_kubernetes, v_uid, 'Resource Limits & HPA',
-$$## Resource Requests & Limits
+$C$## Resource Requests & Limits
 
 ```yaml
 resources:
@@ -1147,11 +1147,11 @@ spec:
         target:
           type: Utilization
           averageUtilization: 70
-```$$,
+```$C$,
    '["Kubernetes","Resources","HPA","Autoscaling"]', 'Performance'),
 
   (v_kubernetes, v_uid, 'Persistent Volumes',
-$$Kubernetes abstrahiert Speicher über **PersistentVolume (PV)** und **PersistentVolumeClaim (PVC)**.
+$C$Kubernetes abstrahiert Speicher über **PersistentVolume (PV)** und **PersistentVolumeClaim (PVC)**.
 
 **PersistentVolume (PV):** Vom Admin bereitgestellter Speicherblock
 **PersistentVolumeClaim (PVC):** Anfrage eines Pods nach Speicher
@@ -1186,7 +1186,7 @@ containers:
 **Access Modes:**
 - `ReadWriteOnce (RWO)` — ein Node, lesen+schreiben
 - `ReadOnlyMany (ROX)` — viele Nodes, nur lesen
-- `ReadWriteMany (RWX)` — viele Nodes, lesen+schreiben$$,
+- `ReadWriteMany (RWX)` — viele Nodes, lesen+schreiben$C$,
    '["Kubernetes","Storage","PVC","Volumes"]', 'Storage');
 
   -- ════════════════════════════════════════════════════════════════
@@ -1195,7 +1195,7 @@ containers:
 
   INSERT INTO cards (box_id, user_id, title, content, tags, category) VALUES
   (v_docker, v_uid, 'Was ist Docker?',
-$$**Docker** ist eine Plattform zum Erstellen, Verteilen und Ausführen von **Containern**.
+$C$**Docker** ist eine Plattform zum Erstellen, Verteilen und Ausführen von **Containern**.
 
 **Container vs. VM:**
 | | Container | VM |
@@ -1216,11 +1216,11 @@ $$**Docker** ist eine Plattform zum Erstellen, Verteilen und Ausführen von **Co
 - "Works on my machine" Problem gelöst
 - Konsistente Umgebungen (Dev = Prod)
 - Schnelles Deployment, einfaches Rollback
-- Microservices-Architektur$$,
+- Microservices-Architektur$C$,
    '["Docker","Container","Grundlagen"]', 'Grundlagen'),
 
   (v_docker, v_uid, 'Dockerfile',
-$$Das **Dockerfile** ist die Bauanleitung für ein Docker-Image.
+$C$Das **Dockerfile** ist die Bauanleitung für ein Docker-Image.
 
 ```dockerfile
 # Basis-Image
@@ -1259,11 +1259,11 @@ CMD ["node", "server.js"]
 | `EXPOSE` | Port dokumentieren |
 | `CMD` | Standardbefehl (überschreibbar) |
 | `ENTRYPOINT` | Hauptprozess (schwerer zu überschreiben) |
-| `USER` | Als welcher User ausführen |$$,
+| `USER` | Als welcher User ausführen |$C$,
    '["Docker","Dockerfile","Build","Image"]', 'Grundlagen'),
 
   (v_docker, v_uid, 'docker build & run',
-$$**Grundlegende Docker-Befehle für Build und Run.**
+$C$**Grundlegende Docker-Befehle für Build und Run.**
 
 ## docker build
 ```bash
@@ -1314,11 +1314,11 @@ docker stop <id/name>
 docker rm <id/name>
 docker logs -f <id>
 docker exec -it <id> bash
-```$$,
+```$C$,
    '["Docker","CLI","Build","Run"]', 'Tools'),
 
   (v_docker, v_uid, 'Docker Compose',
-$$**Docker Compose** definiert und startet Multi-Container-Anwendungen deklarativ.
+$C$**Docker Compose** definiert und startet Multi-Container-Anwendungen deklarativ.
 
 ```yaml
 # docker-compose.yml
@@ -1365,11 +1365,11 @@ docker compose logs -f web    # Logs folgen
 docker compose ps             # Status
 docker compose exec web bash  # Shell in Container
 docker compose build          # Images neu bauen
-```$$,
+```$C$,
    '["Docker","Compose","Multi-Container","DevOps"]', 'Tools'),
 
   (v_docker, v_uid, 'Volumes & Bind Mounts',
-$$Docker hat drei Möglichkeiten, Daten persistent zu speichern.
+$C$Docker hat drei Möglichkeiten, Daten persistent zu speichern.
 
 ## Volumes (empfohlen)
 Docker verwaltet den Speicherort (`/var/lib/docker/volumes/`)
@@ -1402,11 +1402,11 @@ docker run --tmpfs /tmp nginx
 | Persistenz | ✅ | ✅ | ❌ |
 | Performance | Gut | OS-abhängig | Sehr gut |
 | Portabilität | Hoch | Niedrig | - |
-| Einsatz | Prod-Daten | Dev (Hot Reload) | Temp-Daten |$$,
+| Einsatz | Prod-Daten | Dev (Hot Reload) | Temp-Daten |$C$,
    '["Docker","Volumes","Storage","Persistenz"]', 'Storage'),
 
   (v_docker, v_uid, 'Multi-Stage Build',
-$$**Multi-Stage Builds** reduzieren die finale Image-Größe massiv durch mehrere FROM-Stufen.
+$C$**Multi-Stage Builds** reduzieren die finale Image-Größe massiv durch mehrere FROM-Stufen.
 
 **Problem ohne Multi-Stage:**
 - Build-Tools (Compiler, npm, Maven) im Produktions-Image
@@ -1441,11 +1441,11 @@ CMD ["node", "dist/server.js"]
 **Bestimmten Stage bauen:**
 ```bash
 docker build --target builder -t app-builder .
-```$$,
+```$C$,
    '["Docker","Multi-Stage","Optimierung","Build"]', 'Best Practices'),
 
   (v_docker, v_uid, 'ENTRYPOINT vs CMD',
-$$Beide definieren was beim `docker run` ausgeführt wird — aber unterschiedlich.
+$C$Beide definieren was beim `docker run` ausgeführt wird — aber unterschiedlich.
 
 ## CMD
 - **Standardbefehl** der beim Start ausgeführt wird
@@ -1481,11 +1481,11 @@ CMD ["server"]                         # Default-Argument
 ```dockerfile
 CMD node server.js           # Shell-Form: läuft in /bin/sh -c
 CMD ["node", "server.js"]    # Exec-Form: direkt (empfohlen, PID 1)
-```$$,
+```$C$,
    '["Docker","ENTRYPOINT","CMD","Dockerfile"]', 'Grundlagen'),
 
   (v_docker, v_uid, 'Docker Netzwerk',
-$$Docker bietet verschiedene **Netzwerk-Modi** für Container-Kommunikation.
+$C$Docker bietet verschiedene **Netzwerk-Modi** für Container-Kommunikation.
 
 ## Netzwerk-Typen
 ```bash
@@ -1520,11 +1520,11 @@ docker run -p 0.0.0.0:8080:80 nginx
 
 # Nur Localhost
 docker run -p 127.0.0.1:8080:80 nginx
-```$$,
+```$C$,
    '["Docker","Netzwerk","Networking","Bridge"]', 'Netzwerk'),
 
   (v_docker, v_uid, '.dockerignore & Image-Optimierung',
-$$**.dockerignore** verhindert, dass unnötige Dateien ins Image gelangen.
+$C$**.dockerignore** verhindert, dass unnötige Dateien ins Image gelangen.
 
 ```dockerignore
 # Abhängigkeiten (werden im Container neu installiert)
@@ -1567,11 +1567,11 @@ build/
    RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
    ```
 4. **Kein Root:** `USER node` statt als root laufen
-5. **Layer-Caching nutzen:** Selten ändernde Dateien zuerst kopieren$$,
+5. **Layer-Caching nutzen:** Selten ändernde Dateien zuerst kopieren$C$,
    '["Docker","Optimierung","Security","Best Practices"]', 'Best Practices'),
 
   (v_docker, v_uid, 'Docker Health Check',
-$$**Health Checks** überwachen ob ein Container korrekt funktioniert.
+$C$**Health Checks** überwachen ob ein Container korrekt funktioniert.
 
 ```dockerfile
 # Im Dockerfile
@@ -1606,7 +1606,7 @@ healthcheck:
   start_period: 15s
 ```
 
-**Kubernetes ignoriert Docker Health Checks** — dort werden `livenessProbe` und `readinessProbe` verwendet$$,
+**Kubernetes ignoriert Docker Health Checks** — dort werden `livenessProbe` und `readinessProbe` verwendet$C$,
    '["Docker","Health Check","Monitoring","Produktion"]', 'Operations');
 
   -- ════════════════════════════════════════════════════════════════
@@ -1615,7 +1615,7 @@ healthcheck:
 
   INSERT INTO cards (box_id, user_id, title, content, tags, category) VALUES
   (v_scrum, v_uid, 'Scrum Framework Überblick',
-$$**Scrum** ist ein agiles Framework für die Entwicklung und Auslieferung komplexer Produkte.
+$C$**Scrum** ist ein agiles Framework für die Entwicklung und Auslieferung komplexer Produkte.
 
 **Grundprinzipien:**
 - **Empirismus:** Entscheidungen basieren auf Erfahrung und Beobachtung
@@ -1641,11 +1641,11 @@ Product Backlog
 
 **Scrum-Werte:** Commitment, Focus, Offenheit, Respekt, Mut
 
-**Scrum Guide:** Offizielle Referenz unter scrumguides.org (kostenlos)$$,
+**Scrum Guide:** Offizielle Referenz unter scrumguides.org (kostenlos)$C$,
    '["Scrum","Agile","Framework","Überblick"]', 'Grundlagen'),
 
   (v_scrum, v_uid, 'Sprint',
-$$Ein **Sprint** ist ein festes Zeitfenster (1–4 Wochen), in dem ein potenziell auslieferbares Increment entsteht.
+$C$Ein **Sprint** ist ein festes Zeitfenster (1–4 Wochen), in dem ein potenziell auslieferbares Increment entsteht.
 
 **Eigenschaften:**
 - Feste Länge — wird während des Sprints nicht verändert
@@ -1665,11 +1665,11 @@ $$Ein **Sprint** ist ein festes Zeitfenster (1–4 Wochen), in dem ein potenziel
 **Typische Sprint-Länge:**
 - 2 Wochen: am häufigsten in der Praxis
 - Kürzer = schnelleres Feedback, weniger Overhead
-- Länger = mehr Planungssicherheit, aber träger$$,
+- Länger = mehr Planungssicherheit, aber träger$C$,
    '["Scrum","Sprint","Zeitbox","Iteration"]', 'Events'),
 
   (v_scrum, v_uid, 'Product Backlog',
-$$Der **Product Backlog** ist eine geordnete Liste aller bekannten Anforderungen an das Produkt.
+$C$Der **Product Backlog** ist eine geordnete Liste aller bekannten Anforderungen an das Produkt.
 
 **Eigenschaften:**
 - Einzige Quelle für Arbeiten am Produkt
@@ -1689,11 +1689,11 @@ $$Der **Product Backlog** ist eine geordnete Liste aller bekannten Anforderungen
 **Backlog Refinement:**
 - Regelmäßiges Verfeinern, Schätzen und Ordnen
 - Keine offizielle Scrum-Veranstaltung, aber Best Practice
-- Max. 10% der Sprint-Kapazität$$,
+- Max. 10% der Sprint-Kapazität$C$,
    '["Scrum","Backlog","Anforderungen","PO"]', 'Artefakte'),
 
   (v_scrum, v_uid, 'Sprint Backlog',
-$$Der **Sprint Backlog** ist der Plan für den aktuellen Sprint.
+$C$Der **Sprint Backlog** ist der Plan für den aktuellen Sprint.
 
 **Bestandteile:**
 1. **Sprint Goal** — Warum dieser Sprint?
@@ -1715,11 +1715,11 @@ $$Der **Sprint Backlog** ist der Plan für den aktuellen Sprint.
 | Eigentümer | Product Owner | Development Team |
 | Umfang | Gesamtes Produkt | Aktueller Sprint |
 | Veränderung | Jederzeit | Nur durch Dev-Team |
-| Zeitraum | Langfristig | Aktueller Sprint |$$,
+| Zeitraum | Langfristig | Aktueller Sprint |$C$,
    '["Scrum","Sprint Backlog","Planung","Board"]', 'Artefakte'),
 
   (v_scrum, v_uid, 'Increment',
-$$Das **Increment** ist das Ergebnis jedes Sprints — eine konkret nutzbare Produktversion.
+$C$Das **Increment** ist das Ergebnis jedes Sprints — eine konkret nutzbare Produktversion.
 
 **Definition:**
 - Summe aller Sprint Backlog Items + Wert aller vorherigen Increments
@@ -1740,11 +1740,11 @@ In modernen Teams wird das Increment oft bei jedem Merge automatisch deployed (C
 ✅ Wächst täglich während des Sprints
 
 ❌ PO muss es deployen
-✅ PO entscheidet ob deployed wird — Increment muss aber auslieferbereit sein$$,
+✅ PO entscheidet ob deployed wird — Increment muss aber auslieferbereit sein$C$,
    '["Scrum","Increment","Lieferung","Qualität"]', 'Artefakte'),
 
   (v_scrum, v_uid, 'Product Owner (Rolle)',
-$$Der **Product Owner (PO)** maximiert den Wert des Produkts und des Development Teams.
+$C$Der **Product Owner (PO)** maximiert den Wert des Produkts und des Development Teams.
 
 **Verantwortlichkeiten:**
 - **Product Backlog** entwickeln, kommunizieren, ordnen
@@ -1766,11 +1766,11 @@ $$Der **Product Owner (PO)** maximiert den Wert des Produkts und des Development
 **Zusammenarbeit:**
 - Enges Arbeiten mit Stakeholdern (was wird gebraucht?)
 - Enges Arbeiten mit Dev-Team (wie ist es machbar?)
-- Verfügbar für Fragen während des Sprints$$,
+- Verfügbar für Fragen während des Sprints$C$,
    '["Scrum","Product Owner","Rolle","Backlog"]', 'Rollen'),
 
   (v_scrum, v_uid, 'Scrum Master (Rolle)',
-$$Der **Scrum Master** dient dem Scrum Team und der Organisation bei der Einführung von Scrum.
+$C$Der **Scrum Master** dient dem Scrum Team und der Organisation bei der Einführung von Scrum.
 
 **Dienst für das Development Team:**
 - Hindernisse (Impediments) beseitigen
@@ -1793,11 +1793,11 @@ $$Der **Scrum Master** dient dem Scrum Team und der Organisation bei der Einfüh
 - "Scrum Police" (Regeln aufzwingen)
 - Sekretär für das Team
 
-**Führungsstil:** Servant Leadership — führen durch Dienen, nicht durch Autorität$$,
+**Führungsstil:** Servant Leadership — führen durch Dienen, nicht durch Autorität$C$,
    '["Scrum","Scrum Master","Rolle","Coaching","Agile"]', 'Rollen'),
 
   (v_scrum, v_uid, 'Development Team (Rolle)',
-$$Das **Development Team** (in Scrum Guide 2020: einfach Teil des "Scrum Teams") erstellt das Increment.
+$C$Das **Development Team** (in Scrum Guide 2020: einfach Teil des "Scrum Teams") erstellt das Increment.
 
 **Eigenschaften:**
 - **Cross-funktional:** Alle Fähigkeiten im Team (Dev, Test, Design, Ops…)
@@ -1816,11 +1816,11 @@ $$Das **Development Team** (in Scrum Guide 2020: einfach Teil des "Scrum Teams")
 
 **Was das Dev-Team NICHT entscheidet:**
 - Welche Backlog Items priorisiert werden (PO)
-- Ob ein Increment released wird (PO)$$,
+- Ob ein Increment released wird (PO)$C$,
    '["Scrum","Development Team","Selbstorganisation","Rollen"]', 'Rollen'),
 
   (v_scrum, v_uid, 'Sprint Planning',
-$$**Sprint Planning** eröffnet jeden Sprint. Das Scrum Team plant gemeinsam.
+$C$**Sprint Planning** eröffnet jeden Sprint. Das Scrum Team plant gemeinsam.
 
 **Zeitbox:** Max. 8 Stunden für einen 4-Wochen-Sprint (proportional kürzer bei kürzeren Sprints)
 
@@ -1840,11 +1840,11 @@ $$**Sprint Planning** eröffnet jeden Sprint. Das Scrum Team plant gemeinsam.
 
 **Definition of Ready:** PBIs sollten vor Planning klar, schätzbar und testbar sein
 
-**Ergebnis:** Sprint Goal + Sprint Backlog$$,
+**Ergebnis:** Sprint Goal + Sprint Backlog$C$,
    '["Scrum","Sprint Planning","Events","Planung"]', 'Events'),
 
   (v_scrum, v_uid, 'Daily Scrum',
-$$Das **Daily Scrum** ist ein tägliches 15-Minuten-Meeting für das Development Team.
+$C$Das **Daily Scrum** ist ein tägliches 15-Minuten-Meeting für das Development Team.
 
 **Zweck:** Fortschritt zum Sprint Goal überprüfen und Plan für die nächsten 24h anpassen
 
@@ -1868,11 +1868,11 @@ $$Das **Daily Scrum** ist ein tägliches 15-Minuten-Meeting für das Development
 - Transparenz über Fortschritt
 - Impediments früh sichtbar machen
 - Selbstorganisation fördern
-- Unnötige weitere Meetings reduzieren$$,
+- Unnötige weitere Meetings reduzieren$C$,
    '["Scrum","Daily Scrum","Stand-Up","Events"]', 'Events'),
 
   (v_scrum, v_uid, 'Sprint Review',
-$$Die **Sprint Review** findet am Ende jedes Sprints statt — das Scrum Team zeigt die Ergebnisse.
+$C$Die **Sprint Review** findet am Ende jedes Sprints statt — das Scrum Team zeigt die Ergebnisse.
 
 **Zeitbox:** Max. 4 Stunden (4-Wochen-Sprint)
 
@@ -1895,11 +1895,11 @@ $$Die **Sprint Review** findet am Ende jedes Sprints statt — das Scrum Team ze
 ❌ Präsentation von PowerPoints
 ❌ Nur für das Team
 
-**Wichtig:** Das Increment wird vorgeführt, nicht beschrieben$$,
+**Wichtig:** Das Increment wird vorgeführt, nicht beschrieben$C$,
    '["Scrum","Sprint Review","Stakeholder","Events","Demo"]', 'Events'),
 
   (v_scrum, v_uid, 'Sprint Retrospektive',
-$$Die **Sprint Retrospektive** ist die Selbstreflexion des Scrum Teams.
+$C$Die **Sprint Retrospektive** ist die Selbstreflexion des Scrum Teams.
 
 **Zeitbox:** Max. 3 Stunden (4-Wochen-Sprint)
 
@@ -1922,11 +1922,11 @@ $$Die **Sprint Retrospektive** ist die Selbstreflexion des Scrum Teams.
 
 **Unterschied zu Review:**
 - Review: Produkt (Was haben wir gebaut?)
-- Retro: Prozess (Wie haben wir gearbeitet?)$$,
+- Retro: Prozess (Wie haben wir gearbeitet?)$C$,
    '["Scrum","Retrospektive","Verbesserung","Events","Teamarbeit"]', 'Events'),
 
   (v_scrum, v_uid, 'Definition of Done (DoD)',
-$$Die **Definition of Done (DoD)** beschreibt, wann ein Increment als fertig gilt.
+$C$Die **Definition of Done (DoD)** beschreibt, wann ein Increment als fertig gilt.
 
 **Zweck:**
 - Gemeinsames Qualitätsverständnis
@@ -1949,11 +1949,11 @@ $$Die **Definition of Done (DoD)** beschreibt, wann ein Increment als fertig gil
 - Strenger als "Acceptance Criteria" (die sind story-spezifisch)
 - Wird in Retros verbessert
 
-**Wenn DoD nicht erfüllt:** PBI gehört NICHT ins Increment, kommt zurück in Backlog$$,
+**Wenn DoD nicht erfüllt:** PBI gehört NICHT ins Increment, kommt zurück in Backlog$C$,
    '["Scrum","DoD","Qualität","Artefakte"]', 'Qualität'),
 
   (v_scrum, v_uid, 'User Story',
-$$Eine **User Story** beschreibt eine Anforderung aus der Nutzerperspektive.
+$C$Eine **User Story** beschreibt eine Anforderung aus der Nutzerperspektive.
 
 **Format:**
 > Als **[Rolle]** möchte ich **[Funktion]**, damit **[Nutzen]**.
@@ -1976,11 +1976,11 @@ $$Eine **User Story** beschreibt eine Anforderung aus der Nutzerperspektive.
 - Meist als Szenarien: "Gegeben … wenn … dann …"
 - Story-spezifisch (nicht zu verwechseln mit DoD)
 
-**Epics:** Zu große Stories → werden in kleinere User Stories aufgeteilt$$,
+**Epics:** Zu große Stories → werden in kleinere User Stories aufgeteilt$C$,
    '["Scrum","User Story","Anforderungen","INVEST"]', 'Anforderungen'),
 
   (v_scrum, v_uid, 'Story Points & Schätzung',
-$$**Story Points** sind eine relative Maßeinheit für den Aufwand einer User Story.
+$C$**Story Points** sind eine relative Maßeinheit für den Aufwand einer User Story.
 
 **Wichtig:** Story Points messen relativen Aufwand und Komplexität, **nicht Zeit**!
 
@@ -2004,11 +2004,11 @@ $$**Story Points** sind eine relative Maßeinheit für den Aufwand einer User St
 - Menge der Arbeit
 - **Nicht:** Wer die Arbeit macht
 
-**Velocity:** Durchschnittliche Story Points pro Sprint → Sprint-Kapazität planen$$,
+**Velocity:** Durchschnittliche Story Points pro Sprint → Sprint-Kapazität planen$C$,
    '["Scrum","Story Points","Schätzung","Planning Poker"]', 'Planung'),
 
   (v_scrum, v_uid, 'Velocity & Burndown Chart',
-$$## Velocity
+$C$## Velocity
 **Velocity** = Summe der abgeschlossenen Story Points pro Sprint
 
 **Verwendung:**
@@ -2039,11 +2039,11 @@ Story Points
 - **Unter Ideallinie:** Team ist vor Plan
 
 ## Burnup Chart
-Zeigt **fertiggestellte Arbeit** (statt verbleibende) + Total Scope$$,
+Zeigt **fertiggestellte Arbeit** (statt verbleibende) + Total Scope$C$,
    '["Scrum","Velocity","Burndown","Metriken"]', 'Metriken'),
 
   (v_scrum, v_uid, 'Backlog Refinement',
-$$**Backlog Refinement** (früher Grooming) ist das kontinuierliche Verfeinern des Product Backlogs.
+$C$**Backlog Refinement** (früher Grooming) ist das kontinuierliche Verfeinern des Product Backlogs.
 
 **Ziel:** Product Backlog Items Sprint-Ready machen
 
@@ -2069,11 +2069,11 @@ $$**Backlog Refinement** (früher Grooming) ist das kontinuierliche Verfeinern d
 
 **Wer?**
 - Product Owner + Development Team
-- Scrum Master als Facilitator$$,
+- Scrum Master als Facilitator$C$,
    '["Scrum","Backlog Refinement","Grooming","Planung"]', 'Planung'),
 
   (v_scrum, v_uid, 'Technical Debt & Spike',
-$$## Technical Debt (Technische Schulden)
+$C$## Technical Debt (Technische Schulden)
 **Aufgelaufene Mehrarbeit**, die durch kurzfristige Lösungen statt guter Architektur entsteht.
 
 **Arten:**
@@ -2100,11 +2100,11 @@ Ein **Spike** ist eine zeitboxed Recherche-Aufgabe zur Reduktion von Unsicherhei
 **Eigenschaften:**
 - Feste Zeitbox (z. B. 2 Tage)
 - Klar definiertes Ergebnis (Bericht, Entscheidung, POC)
-- Ergebnis des Spikes = neues PBI oder Schätzung$$,
+- Ergebnis des Spikes = neues PBI oder Schätzung$C$,
    '["Scrum","Technical Debt","Spike","Qualität"]', 'Qualität'),
 
   (v_scrum, v_uid, 'Scrum of Scrums & Skalierung',
-$$Scrum funktioniert optimal für ein Team. Für größere Organisationen gibt es Skalierungsframeworks.
+$C$Scrum funktioniert optimal für ein Team. Für größere Organisationen gibt es Skalierungsframeworks.
 
 ## Scrum of Scrums
 **Koordination zwischen mehreren Scrum Teams**
@@ -2131,7 +2131,7 @@ $$Scrum funktioniert optimal für ein Team. Für größere Organisationen gibt e
 - Gemeinsame Definition of Done
 
 **Spotify Model:** (kein Framework, Inspiration)
-- Squads (Teams), Tribes (Abteilungen), Chapters (Fachbereiche), Guilds (Communities)$$,
+- Squads (Teams), Tribes (Abteilungen), Chapters (Fachbereiche), Guilds (Communities)$C$,
    '["Scrum","Skalierung","SAFe","LeSS","Nexus"]', 'Skalierung');
 
   RAISE NOTICE 'Seed erfolgreich! Bereiche, Boxen und Karten für % erstellt.', v_uid;
