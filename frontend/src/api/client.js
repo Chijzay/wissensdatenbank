@@ -25,7 +25,7 @@ async function ai(action, data = {}) {
 export const api = {
   boxes: {
     list: async () => {
-      const { data: boxes, error: bErr } = await supabase.from('boxes').select('*').order('sort_order').order('created_at');
+      const { data: boxes, error: bErr } = await supabase.from('boxes').select('*').is('deleted_at', null).order('sort_order').order('created_at');
       if (bErr) throw bErr;
       const { data: cards, error: cErr } = await supabase.from('cards').select('id, box_id').is('deleted_at', null);
       if (cErr) throw cErr;
@@ -63,10 +63,10 @@ export const api = {
 
     findOrCreate: async (name) => {
       const { data: existing } = await supabase.from('boxes').select('*')
-        .ilike('name', name.trim()).is('parent_id', null).maybeSingle();
+        .ilike('name', name.trim()).is('parent_id', null).is('deleted_at', null).maybeSingle();
       if (existing) return existing;
 
-      const { data: all } = await supabase.from('boxes').select('id');
+      const { data: all } = await supabase.from('boxes').select('id').is('deleted_at', null);
       const color = AUTO_COLORS[(all?.length || 0) % AUTO_COLORS.length];
       const { data, error } = await supabase.from('boxes')
         .insert({ name: name.trim(), color, icon: '📁', parent_id: null })
@@ -82,8 +82,50 @@ export const api = {
     },
 
     delete: async (id) => {
-      await supabase.from('boxes').delete().eq('parent_id', id);
+      const now = new Date().toISOString();
+      // Kinder-Boxen finden
+      const { data: children } = await supabase.from('boxes').select('id').eq('parent_id', id);
+      const childIds = (children || []).map(c => c.id);
+      const allBoxIds = [id, ...childIds];
+      // Karten in allen Boxen soft-löschen
+      await supabase.from('cards').update({ deleted_at: now }).in('box_id', allBoxIds).is('deleted_at', null);
+      // Kinder-Boxen soft-löschen
+      if (childIds.length) await supabase.from('boxes').update({ deleted_at: now }).in('id', childIds);
+      // Box selbst soft-löschen
+      await supabase.from('boxes').update({ deleted_at: now }).eq('id', id);
+      return { ok: true };
+    },
+
+    trash: async () => {
+      const { data, error } = await supabase.from('boxes').select('*').not('deleted_at', 'is', null).order('deleted_at', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+
+    restore: async (id) => {
+      // Kinder-Boxen finden (auch gelöschte)
+      const { data: children } = await supabase.from('boxes').select('id').eq('parent_id', id);
+      const childIds = (children || []).map(c => c.id);
+      const allBoxIds = [id, ...childIds];
+      // Karten wiederherstellen
+      await supabase.from('cards').update({ deleted_at: null }).in('box_id', allBoxIds);
+      // Kinder-Boxen wiederherstellen
+      if (childIds.length) await supabase.from('boxes').update({ deleted_at: null }).in('id', childIds);
+      // Box selbst wiederherstellen
+      await supabase.from('boxes').update({ deleted_at: null }).eq('id', id);
+      return { ok: true };
+    },
+
+    deletePermanently: async (id) => {
+      // Cascade löscht Kinder-Boxen und Karten automatisch (ON DELETE CASCADE im Schema)
       await supabase.from('boxes').delete().eq('id', id);
+      return { ok: true };
+    },
+
+    deleteAllTrashed: async () => {
+      const { data: trashed } = await supabase.from('boxes').select('id').not('deleted_at', 'is', null);
+      const ids = (trashed || []).map(b => b.id);
+      if (ids.length) await supabase.from('boxes').delete().in('id', ids);
       return { ok: true };
     },
 
@@ -230,6 +272,11 @@ export const api = {
 
     deletePermanently: async (id) => {
       await supabase.from('cards').delete().eq('id', id);
+      return { ok: true };
+    },
+
+    deleteAllTrashed: async () => {
+      await supabase.from('cards').delete().not('deleted_at', 'is', null);
       return { ok: true };
     },
 
