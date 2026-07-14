@@ -99,6 +99,11 @@ export default function Home({ onOpenEntry, onStartReview, onShowImpressum, onSh
   const [newIcon, setNewIcon] = useState('📁');
   const [newColor, setNewColor] = useState(AUTO_COLORS[0]);
 
+  // Benutzername
+  const [userName, setUserName] = useState('');
+  const [editingName, setEditingName] = useState(false);
+  const [nameInput, setNameInput] = useState('');
+
   const textareaRef = useRef(null);
   const recognitionRef = useRef(null);
   const recordingRef = useRef(false);
@@ -107,6 +112,7 @@ export default function Home({ onOpenEntry, onStartReview, onShowImpressum, onSh
   const bereichLongPressed = useRef({});
   const bereichClickTimers = useRef({});
   const boxDropdownRef = useRef(null);
+  const nameInputRef = useRef(null);
   const isMobile = 'ontouchstart' in window;
 
   const dndSensors = useSensors(
@@ -144,6 +150,23 @@ export default function Home({ onOpenEntry, onStartReview, onShowImpressum, onSh
   }, [activeBox, activeBereich, search]);
 
   useEffect(() => { loadBoxes(); }, [loadBoxes]);
+
+  // Benutzername aus Auth-Metadaten laden
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      const name = user?.user_metadata?.display_name || '';
+      setUserName(name);
+      setNameInput(name);
+    });
+  }, []);
+
+  const saveUserName = async () => {
+    const trimmed = nameInput.trim();
+    setEditingName(false);
+    if (trimmed === userName) return;
+    await supabase.auth.updateUser({ data: { display_name: trimmed } });
+    setUserName(trimmed);
+  };
 
   // Nach erstem Box-Laden: Nav-State mit aktuellen Daten abgleichen
   useEffect(() => {
@@ -441,7 +464,26 @@ export default function Home({ onOpenEntry, onStartReview, onShowImpressum, onSh
           <>
             <div style={{ flex: 1 }}>
               <h1 style={{ fontSize: 26, fontWeight: 700, letterSpacing: '-0.3px', lineHeight: 1.2 }}>Mein Wissen</h1>
-              <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 3, fontStyle: 'italic', letterSpacing: '0.04em' }}>Lernen. Verstehen. Behalten.</p>
+              {editingName ? (
+                <input
+                  ref={nameInputRef}
+                  value={nameInput}
+                  onChange={e => setNameInput(e.target.value)}
+                  onBlur={saveUserName}
+                  onKeyDown={e => { if (e.key === 'Enter') saveUserName(); if (e.key === 'Escape') { setEditingName(false); setNameInput(userName); } }}
+                  placeholder="Dein Name…"
+                  autoFocus
+                  style={{ fontSize: 12, background: 'var(--surface)', border: '1px solid var(--accent)', borderRadius: 6, padding: '3px 8px', color: 'var(--text)', width: 160, marginTop: 4, outline: 'none' }}
+                />
+              ) : (
+                <button
+                  onClick={() => setEditingName(true)}
+                  title="Namen bearbeiten"
+                  style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: 'var(--text-muted)', marginTop: 3, background: 'none', padding: 0, fontStyle: 'italic', letterSpacing: '0.04em' }}>
+                  {userName ? `Hallo, ${userName}` : 'Name festlegen…'}
+                  <Pencil size={10} style={{ opacity: 0.45, flexShrink: 0 }} />
+                </button>
+              )}
             </div>
             <ThemePicker />
             <button
