@@ -464,27 +464,28 @@ export default function Home({ onOpenEntry, onStartReview, onShowImpressum, onSh
           <>
             <div style={{ flex: 1 }}>
               <h1 style={{ fontSize: 26, fontWeight: 700, letterSpacing: '-0.3px', lineHeight: 1.2 }}>Mein Wissen</h1>
-              {editingName ? (
-                <input
-                  ref={nameInputRef}
-                  value={nameInput}
-                  onChange={e => setNameInput(e.target.value)}
-                  onBlur={saveUserName}
-                  onKeyDown={e => { if (e.key === 'Enter') saveUserName(); if (e.key === 'Escape') { setEditingName(false); setNameInput(userName); } }}
-                  placeholder="Dein Name…"
-                  autoFocus
-                  style={{ fontSize: 12, background: 'var(--surface)', border: '1px solid var(--accent)', borderRadius: 6, padding: '3px 8px', color: 'var(--text)', width: 160, marginTop: 4, outline: 'none' }}
-                />
-              ) : (
-                <button
-                  onClick={() => setEditingName(true)}
-                  title="Namen bearbeiten"
-                  style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: 'var(--text-muted)', marginTop: 3, background: 'none', padding: 0, fontStyle: 'italic', letterSpacing: '0.04em' }}>
-                  {userName ? `Hallo, ${userName}` : 'Name festlegen…'}
-                  <Pencil size={10} style={{ opacity: 0.45, flexShrink: 0 }} />
-                </button>
-              )}
+              <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2, letterSpacing: '0.06em' }}>Lesen · Verstehen · Behalten</p>
             </div>
+            {editingName ? (
+              <input
+                ref={nameInputRef}
+                value={nameInput}
+                onChange={e => setNameInput(e.target.value)}
+                onBlur={saveUserName}
+                onKeyDown={e => { if (e.key === 'Enter') saveUserName(); if (e.key === 'Escape') { setEditingName(false); setNameInput(userName); } }}
+                placeholder="Dein Name…"
+                autoFocus
+                style={{ fontSize: 12, background: 'var(--surface)', border: '1px solid var(--accent)', borderRadius: 8, padding: '4px 10px', color: 'var(--text)', width: 130, outline: 'none' }}
+              />
+            ) : (
+              <button
+                onClick={() => setEditingName(true)}
+                title="Namen bearbeiten"
+                style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 16, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-muted)', fontSize: 12, fontWeight: 500, whiteSpace: 'nowrap' }}>
+                {userName || '–'}
+                <Pencil size={10} style={{ opacity: 0.45, flexShrink: 0 }} />
+              </button>
+            )}
             <ThemePicker />
             <button
               onClick={onShowBereiche}

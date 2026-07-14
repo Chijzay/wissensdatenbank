@@ -3,7 +3,7 @@
 -- Im Supabase SQL-Editor ausführen — NACH migration_001
 -- ================================================================
 
-DO $$
+DO $SEED$
 DECLARE
   v_uid          uuid;
   v_informatik   integer;
@@ -2136,4 +2136,4 @@ $$Scrum funktioniert optimal für ein Team. Für größere Organisationen gibt e
 
   RAISE NOTICE 'Seed erfolgreich! Bereiche, Boxen und Karten für % erstellt.', v_uid;
 END;
-$$ LANGUAGE plpgsql;
+$SEED$ LANGUAGE plpgsql;
