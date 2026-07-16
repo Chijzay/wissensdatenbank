@@ -12,6 +12,7 @@ DECLARE
   v_kubernetes   integer;
   v_docker       integer;
   v_scrum        integer;
+  v_devops       integer;
 BEGIN
   SELECT id INTO v_uid FROM auth.users WHERE email = 'steven.illg.it@outlook.com';
   IF v_uid IS NULL THEN RAISE EXCEPTION 'Nutzer nicht gefunden'; END IF;
@@ -32,6 +33,8 @@ BEGIN
     VALUES ('Kubernetes', '⎈', '#326ce5', v_informatik, v_uid, 3) RETURNING id INTO v_kubernetes;
   INSERT INTO boxes (name, icon, color, parent_id, user_id, sort_order)
     VALUES ('Docker', '🐳', '#0db7ed', v_informatik, v_uid, 4) RETURNING id INTO v_docker;
+  INSERT INTO boxes (name, icon, color, parent_id, user_id, sort_order)
+    VALUES ('DevOps', '🔄', '#f97316', v_informatik, v_uid, 5) RETURNING id INTO v_devops;
 
   -- ════════════════════════════════════════════════════════════════
   -- IT MATHE
@@ -718,6 +721,432 @@ az deployment group create \
 **Alternativen:** Terraform (cloud-agnostisch), Pulumi (imperative Sprachen)$C$,
    '["Azure","IaC","ARM","Bicep","Infrastructure"]', 'DevOps');
 
+  INSERT INTO cards (box_id, user_id, title, content, tags, category) VALUES
+  (v_azure, v_uid, 'Azure Entra ID (Azure AD)',
+$C$**Azure Entra ID** (früher: Azure Active Directory) ist der cloudbasierte **Identity & Access Management**-Dienst von Microsoft.
+
+## Kernkonzepte
+
+**Tenant:** Deine Organisation in Azure — jede Firma hat einen eigenen Tenant mit eigener Domain.
+
+**User & Groups:** Nutzer werden zentral verwaltet, Berechtigungen über Gruppen vergeben.
+
+**App-Registrierungen:** Externe Apps erhalten eine Client-ID und können OAuth2/OIDC nutzen.
+
+**Service Principal:** Maschinelles Konto für Apps, CI/CD-Pipelines oder Skripte.
+
+**Managed Identity:** Azure-Service erhält automatisch eine Identität — kein Passwort nötig!
+
+## Authentifizierungsfluss (OIDC)
+```
+App → Azure Entra ID → Access Token → API
+```
+
+## Rollen-Konzept
+
+- **Global Administrator:** Vollzugriff auf Entra ID
+- **User Administrator:** Nutzer verwalten
+- **Owner/Contributor/Reader:** Azure-Ressource-Rollen (RBAC)
+
+## Praktisch
+```bash
+# Azure CLI: Login
+az login
+# Service Principal erstellen
+az ad sp create-for-rbac --name "mein-sp" --role Contributor
+```
+
+**Merke:** Entra ID = *Wer bist du?* (AuthN). Azure RBAC = *Was darfst du?* (AuthZ)$C$,
+   '["Azure","Entra ID","Active Directory","Identity","IAM"]', 'Sicherheit'),
+
+  (v_azure, v_uid, 'Azure Policy & Governance',
+$C$**Azure Policy** erzwingt organisationsweite Regeln auf Ressourcen.
+
+## Azure Policy
+
+Regeln, die definieren was erlaubt ist:
+- *Allowed locations* — Ressourcen nur in EU
+- *Required tags* — jede Ressource braucht den Tag "CostCenter"
+- *SKU restrictions* — nur bestimmte VM-Größen erlaubt
+
+**Assignment:** Policy wird auf Subscription, Resource Group oder Ressource angewendet.
+
+**Effect:**
+| Effect | Bedeutung |
+|--------|-----------|
+| `deny` | Ressource wird abgelehnt |
+| `audit` | Erlaubt, aber Warnung |
+| `append` | Fehlende Felder ergänzen |
+| `deployIfNotExists` | Auto-Deployment bei Fehlen |
+
+## Management Groups
+Hierarchie über Subscriptions:
+```
+Root Management Group
+  └─ Produktion MG
+       ├─ Subscription A
+       └─ Subscription B
+```
+Policies vererben sich nach unten.
+
+## Azure Blueprints
+Pakete aus Policies + RBAC + ARM Templates — für reproduzierbare Umgebungen.
+
+**Merke:** Policy = Leitplanken für die Cloud-Nutzung$C$,
+   '["Azure","Policy","Governance","Compliance","Management Groups"]', 'Governance'),
+
+  (v_azure, v_uid, 'Azure Monitor & Application Insights',
+$C$**Azure Monitor** ist die zentrale Observability-Plattform in Azure.
+
+## Drei Säulen der Observability
+
+**1. Metrics** (Zahlen über die Zeit)
+- CPU-Auslastung, RAM, Requests/Sekunde
+- Im Azure Portal als Graphen sichtbar
+
+**2. Logs** (strukturierte Ereignisse)
+- Log Analytics Workspace: zentrale Ablage
+- KQL (Kusto Query Language) zum Abfragen:
+```kql
+requests
+| where timestamp > ago(1h)
+| summarize count() by resultCode
+```
+
+**3. Alerts** (Benachrichtigungen)
+- Metriken oder Log-Abfragen lösen Alarme aus
+- Aktionsgruppen: E-Mail, SMS, Webhook, Azure Function
+
+## Application Insights
+Speziell für **Applikations-Telemetrie**:
+- Request/Response-Zeiten
+- Abhängigkeiten (DB, externe APIs)
+- Exceptions & Stack Traces
+- User-Journeys (Trichter-Analyse)
+
+```javascript
+// App Insights SDK einbinden
+appInsights.trackEvent({ name: 'UserLogin' });
+```
+
+**Merke:** Monitor = Infrastruktur. App Insights = deine App selbst.$C$,
+   '["Azure","Monitor","Application Insights","Logging","Observability"]', 'Monitoring'),
+
+  (v_azure, v_uid, 'Azure Functions (Serverless)',
+$C$**Azure Functions** sind ereignisgesteuerte, serverlose Code-Bausteine — du zahlst nur für die tatsächliche Ausführung.
+
+## Konzept
+
+```
+Trigger → Funktion → Output Binding
+```
+
+**Trigger-Typen:**
+| Trigger | Wann |
+|---------|------|
+| HTTP | API-Aufruf |
+| Timer | Zeitgesteuert (Cron) |
+| Queue | Neue Nachricht in Queue |
+| Blob | Neue Datei in Blob Storage |
+| Event Hub | Stream-Ereignis |
+
+## Beispiel (C#)
+```csharp
+[FunctionName("HelloWorld")]
+public static async Task<IActionResult> Run(
+    [HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req)
+{
+    return new OkObjectResult("Hello, World!");
+}
+```
+
+## Hosting-Pläne
+
+| Plan | Kaltstart | Skalierung | Kosten |
+|------|-----------|------------|--------|
+| Consumption | möglich | Auto | Pay-per-use |
+| Premium | keiner | Auto | Monatlich |
+| Dedicated | keiner | Manuell | App Service Plan |
+
+## Bindings
+Deklarative Ein-/Ausgaben ohne Verbindungscode:
+```json
+{ "type": "queueOutput", "name": "outQueue", "queueName": "myqueue" }
+```
+
+**Merke:** Serverless = kein Server-Management, nur Code$C$,
+   '["Azure","Functions","Serverless","FaaS","Trigger"]', 'Compute'),
+
+  (v_azure, v_uid, 'Azure App Service (PaaS)',
+$C$**Azure App Service** ist eine **Platform-as-a-Service (PaaS)**-Lösung zum Hosten von Webanwendungen.
+
+## Unterstützte Stacks
+- .NET, .NET Core, Java, Node.js, Python, PHP, Ruby
+- Docker Container (einzeln oder Compose)
+
+## Deployment-Optionen
+```bash
+# Git-Deploy
+git remote add azure https://...
+git push azure main
+
+# Azure CLI
+az webapp up --name meine-app --runtime "PYTHON:3.11"
+
+# ZIP-Deploy
+az webapp deployment source config-zip --src app.zip
+```
+
+## Deployment Slots
+- **Production** + **Staging** Slot
+- Änderungen erst auf Staging testen → dann **swap** (ohne Downtime!)
+- Rollback: nochmals swap
+
+## Skalierung
+- **Scale Up:** Größere Instanz (mehr CPU/RAM)
+- **Scale Out:** Mehr Instanzen (horizontal)
+- Auto-Scale basierend auf CPU, RAM, Requests
+
+## App Service Plan
+Definiert die Ressourcen: `F1` (kostenlos) → `P3V3` (Premium)
+
+**Merke:** App Service = Managed Hosting; du kümmerst dich nur um den Code$C$,
+   '["Azure","App Service","PaaS","Web App","Hosting"]', 'Compute'),
+
+  (v_azure, v_uid, 'Azure Virtual Network (VNet)',
+$C$Das **Azure Virtual Network (VNet)** ist das private Netzwerk für deine Azure-Ressourcen.
+
+## Grundstruktur
+```
+VNet: 10.0.0.0/16
+  ├─ Subnet Web:  10.0.1.0/24 (App Service, VMs)
+  ├─ Subnet DB:   10.0.2.0/24 (Azure SQL, Cosmos)
+  └─ Subnet GW:   10.0.3.0/28 (VPN Gateway)
+```
+
+## Kernkonzepte
+
+**Subnets:** Unterteilungen des VNets — Ressourcen im selben Subnet kommunizieren direkt.
+
+**Network Security Groups (NSG):** Firewall-Regeln für ein Subnet oder eine Netzwerkkarte:
+```
+Eingehend: Port 443 erlauben, alles andere ablehnen
+Ausgehend: Port 1433 zur DB erlauben
+```
+
+**VNet Peering:** Zwei VNets verbinden (auch cross-region) — kein Gateway nötig.
+
+**Private Endpoint:** Azure-Service (z.B. Storage) bekommt eine private IP im VNet — kein Internetrouting.
+
+## VPN Gateway & ExpressRoute
+- **VPN Gateway:** Verschlüsselter Tunnel zum On-Premise-Netz (über Internet)
+- **ExpressRoute:** Dedizierte Privatleitung (höhere Bandbreite, kein Internet)
+
+**Merke:** VNet = dein privates Azure-Netzwerk; NSG = deine Firewall-Regeln$C$,
+   '["Azure","VNet","Networking","NSG","Subnet"]', 'Netzwerk'),
+
+  (v_azure, v_uid, 'Azure Storage Account',
+$C$**Azure Storage Account** bietet skalierbaren, hochverfügbaren Cloud-Speicher.
+
+## Speicherdienste im Storage Account
+
+| Dienst | Beschreibung | Typischer Einsatz |
+|--------|-------------|-------------------|
+| **Blob Storage** | Unstrukturierte Dateien | Bilder, Videos, Backups |
+| **Table Storage** | NoSQL Key-Value | Logs, einfache Daten |
+| **Queue Storage** | Nachrichten-Queue | Entkopplung von Services |
+| **File Storage** | SMB/NFS Dateifreigabe | Legacy-Apps, Mounts |
+
+## Blob Storage Tier
+
+| Tier | Zugriffszeit | Kosten |
+|------|-------------|--------|
+| Hot | sofort | am teuersten |
+| Cool | sofort | günstiger |
+| Archive | Stunden | sehr günstig |
+
+## Zugriff
+```bash
+# SAS-Token (Shared Access Signature)
+az storage blob generate-sas --container-name mein-container \
+  --name bild.jpg --permissions r --expiry 2025-12-31
+
+# Upload
+az storage blob upload --file ./bild.jpg --container-name mein-container
+```
+
+## Redundanz
+- **LRS** — lokal redundant (3 Kopien, 1 Rechenzentrum)
+- **ZRS** — zonenredundant (3 Zonen einer Region)
+- **GRS** — georedundant (+ 2. Region)
+
+**Merke:** Blob = Dateien, Queue = Nachrichten, Table = simple NoSQL, File = Netzlaufwerk$C$,
+   '["Azure","Storage","Blob","Queue","Table"]', 'Storage'),
+
+  (v_azure, v_uid, 'Azure SQL & Cosmos DB',
+$C$Azure bietet **managed Datenbank-Dienste** — kein Server-Patch-Management nötig.
+
+## Azure SQL Database
+Vollständig verwaltetes **relationales** Datenbankservice (SQL Server-Engine):
+```sql
+-- Verbindung wie normales SQL Server
+SELECT TOP 10 * FROM Orders WHERE Status = 'Pending'
+```
+- Automatisches Backup, Patching, HA
+- **Elastic Pool:** Mehrere DBs teilen sich Ressourcen
+- **Serverless:** Auto-Pause bei Inaktivität
+
+## Azure Cosmos DB
+**Globale, multi-model NoSQL-Datenbank:**
+- Sub-10ms Latenz weltweit
+- APIs: SQL (Core), MongoDB, Cassandra, Gremlin (Graph), Table
+
+```json
+// Dokument in Cosmos DB
+{
+  "id": "user-123",
+  "name": "Max Mustermann",
+  "partitionKey": "DE"
+}
+```
+
+**Partition Key:** entscheidend für Performance — wähle ihn weise!
+
+## Wann was?
+| Szenario | Empfehlung |
+|----------|-----------|
+| Relationale Daten | Azure SQL |
+| JSON-Dokumente | Cosmos DB (SQL API) |
+| Globale Skalierung | Cosmos DB |
+| MongoDB-Migration | Cosmos DB (Mongo API) |
+
+**Merke:** SQL = relational & ACID; Cosmos = global, NoSQL, millisekunden-schnell$C$,
+   '["Azure","SQL","Cosmos DB","NoSQL","Datenbank"]', 'Datenbank'),
+
+  (v_azure, v_uid, 'Azure Key Vault',
+$C$**Azure Key Vault** ist der sichere Tresor für Secrets, Schlüssel und Zertifikate.
+
+## Was wird gespeichert?
+
+| Typ | Beispiele |
+|-----|----------|
+| **Secrets** | Passwörter, Connection Strings, API Keys |
+| **Keys** | Kryptographische Schlüssel (RSA, EC) |
+| **Certificates** | TLS/SSL-Zertifikate |
+
+## Zugriff
+
+Prinzip: **Kein Passwort im Code** — stattdessen:
+1. App hat eine **Managed Identity**
+2. Key Vault gibt dieser Identity Berechtigung
+3. App liest Secret zur Laufzeit
+
+```python
+from azure.identity import DefaultAzureCredential
+from azure.keyvault.secrets import SecretClient
+
+credential = DefaultAzureCredential()
+client = SecretClient(vault_url="https://mein-vault.vault.azure.net", credential=credential)
+secret = client.get_secret("DatenbankPasswort")
+```
+
+## App Settings Integration
+```bash
+# Referenz in App Service / Azure Functions:
+@Microsoft.KeyVault(SecretUri=https://mein-vault.vault.azure.net/secrets/DbPass/)
+```
+App liest automatisch den aktuellen Wert — kein Neustart bei Rotation nötig!
+
+**Merke:** Key Vault = dein sicherer Passwort-Manager für Azure-Apps$C$,
+   '["Azure","Key Vault","Security","Secrets","Zertifikate"]', 'Sicherheit'),
+
+  (v_azure, v_uid, 'Azure Service Bus & Event Hub',
+$C$Zwei wichtige Messaging-Dienste in Azure — beide entkoppeln Services voneinander.
+
+## Azure Service Bus (Message Queue / Topic)
+
+**Queue:** Nachrichten werden genau einmal verarbeitet (Point-to-Point):
+```
+Producer → [Queue] → Consumer
+```
+
+**Topic + Subscriptions:** Nachrichten an mehrere Empfänger (Pub/Sub):
+```
+Producer → [Topic] → Sub A → Consumer A
+                   → Sub B → Consumer B
+```
+
+**Einsatz:** Bestellsystem, Bezahlprozess, Workflows wo Reihenfolge wichtig ist.
+
+**Features:** Dead Letter Queue, Sessions, Scheduled Messages, Duplicate Detection
+
+## Azure Event Hub (Event Streaming)
+
+Für **große Mengen** an Ereignissen (Telemetrie, Logs, IoT):
+- Millions events/sec
+- Retention: 1-7 Tage (oder länger)
+- **Consumer Groups:** Mehrere unabhängige Reader
+
+```
+IoT-Geräte → Event Hub → Stream Analytics → Power BI
+                       → Azure Function → Datenbank
+```
+
+**Partitionen:** Parallele Verarbeitung; Reihenfolge nur innerhalb einer Partition.
+
+## Wann was?
+| Szenario | Dienst |
+|----------|--------|
+| Bestellung verarbeiten | Service Bus Queue |
+| Notification an mehrere | Service Bus Topic |
+| IoT-Telemetrie | Event Hub |
+| Log-Streaming | Event Hub |
+
+**Merke:** Service Bus = Nachrichten; Event Hub = Ereignisströme$C$,
+   '["Azure","Service Bus","Event Hub","Messaging","Pub-Sub"]', 'Integration'),
+
+  (v_azure, v_uid, 'Azure Kubernetes Service (AKS)',
+$C$**Azure Kubernetes Service (AKS)** ist der managed Kubernetes-Dienst in Azure.
+
+## Warum AKS?
+Microsoft übernimmt das **Control Plane** (Master-Nodes) kostenlos — du verwaltest nur die Worker Nodes.
+
+## Cluster erstellen
+```bash
+# Cluster anlegen
+az aks create \
+  --resource-group meine-rg \
+  --name mein-cluster \
+  --node-count 3 \
+  --enable-managed-identity
+
+# kubectl konfigurieren
+az aks get-credentials --resource-group meine-rg --name mein-cluster
+```
+
+## Azure-Integrationen
+
+**Azure Container Registry (ACR):** Private Image Registry
+```bash
+az aks update --attach-acr mein-acr
+```
+
+**Azure Load Balancer:** Automatisch für `type: LoadBalancer` Services erstellt.
+
+**Managed Identity:** Pods können Azure-Services (Key Vault, Storage) ohne Passwort nutzen.
+
+**Azure Monitor:** Logs und Metrics automatisch in Log Analytics Workspace.
+
+## Node Pools
+```bash
+# Zusätzlichen Node Pool hinzufügen (z.B. GPU-Nodes)
+az aks nodepool add --cluster-name mein-cluster \
+  --name gpupool --node-vm-size Standard_NC6
+```
+
+**Merke:** AKS = Kubernetes in Azure, Control Plane gratis, du verwaltest nur die Worker$C$,
+   '["Azure","AKS","Kubernetes","Container","Managed Service"]', 'Container');
+
   -- ════════════════════════════════════════════════════════════════
   -- KUBERNETES
   -- ════════════════════════════════════════════════════════════════
@@ -1189,6 +1618,510 @@ containers:
 - `ReadWriteMany (RWX)` — viele Nodes, lesen+schreiben$C$,
    '["Kubernetes","Storage","PVC","Volumes"]', 'Storage');
 
+  INSERT INTO cards (box_id, user_id, title, content, tags, category) VALUES
+  (v_kubernetes, v_uid, 'Kubernetes Namespaces',
+$C$**Namespaces** unterteilen einen Kubernetes-Cluster in virtuelle Teilbereiche.
+
+## Warum Namespaces?
+- Isolierung von Teams, Projekten, Umgebungen
+- `dev`, `staging`, `production` im selben Cluster
+- Eigene Ressourcen-Quotas pro Namespace
+
+## Standard-Namespaces
+```bash
+kubectl get namespaces
+# NAME              STATUS
+# default           Active   ← deine Ressourcen wenn kein Namespace angegeben
+# kube-system       Active   ← Kubernetes-interne Komponenten
+# kube-public       Active   ← öffentlich lesbar
+# kube-node-lease   Active   ← Node-Heartbeats
+```
+
+## Namespace erstellen und nutzen
+```bash
+kubectl create namespace produktion
+
+# Ressource in Namespace deployen
+kubectl apply -f deployment.yaml -n produktion
+
+# Standard-Namespace setzen
+kubectl config set-context --current --namespace=produktion
+```
+
+## Manifest mit Namespace
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: mein-pod
+  namespace: produktion
+```
+
+## Ressourcen-Quotas
+```yaml
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: dev-quota
+  namespace: development
+spec:
+  hard:
+    pods: "10"
+    requests.cpu: "4"
+    limits.memory: 8Gi
+```
+
+**Merke:** Namespaces = Virtuelle Cluster im Cluster; nicht für Node-Isolierung$C$,
+   '["Kubernetes","Namespace","Isolation","Quota","Cluster"]', 'Grundlagen'),
+
+  (v_kubernetes, v_uid, 'Kubernetes RBAC (Zugriffskontrolle)',
+$C$**Role-Based Access Control (RBAC)** steuert, wer was im Kubernetes-Cluster darf.
+
+## Konzepte
+
+**Role** — Berechtigungen in einem Namespace:
+```yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  namespace: produktion
+  name: pod-leser
+rules:
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get", "list", "watch"]
+```
+
+**ClusterRole** — Berechtigungen cluster-weit (alle Namespaces).
+
+**RoleBinding** — Bindet Role an User/ServiceAccount:
+```yaml
+kind: RoleBinding
+metadata:
+  name: pod-leser-binding
+  namespace: produktion
+subjects:
+- kind: User
+  name: "anna@example.com"
+roleRef:
+  kind: Role
+  name: pod-leser
+  apiGroup: rbac.authorization.k8s.io
+```
+
+## Wichtige Verbs
+`get`, `list`, `watch`, `create`, `update`, `patch`, `delete`
+
+## ServiceAccount
+Jeder Pod hat einen ServiceAccount — die Identität des Pods für den Kubernetes-API-Server.
+
+```bash
+# Berechtigungen prüfen
+kubectl auth can-i create pods --namespace=produktion --as=anna@example.com
+```
+
+**Merke:** RBAC = Wer (Subject) darf was (Verb) auf welchen Ressourcen?$C$,
+   '["Kubernetes","RBAC","Security","Role","Zugriffskontrolle"]', 'Sicherheit'),
+
+  (v_kubernetes, v_uid, 'ConfigMaps & Secrets',
+$C$**ConfigMaps** und **Secrets** trennen Konfiguration vom Container-Image.
+
+## ConfigMap — unkritische Konfiguration
+
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+data:
+  DATABASE_HOST: "postgres.default.svc.cluster.local"
+  LOG_LEVEL: "info"
+  MAX_CONNECTIONS: "100"
+```
+
+### Im Pod verwenden
+```yaml
+env:
+- name: DB_HOST
+  valueFrom:
+    configMapKeyRef:
+      name: app-config
+      key: DATABASE_HOST
+# Oder als Volume (Konfig-Dateien)
+volumes:
+- name: config-vol
+  configMap:
+    name: app-config
+```
+
+## Secret — sensible Daten (Base64-kodiert)
+
+```bash
+kubectl create secret generic db-secret \
+  --from-literal=password=SuperGeheim123
+```
+
+```yaml
+env:
+- name: DB_PASS
+  valueFrom:
+    secretKeyRef:
+      name: db-secret
+      key: password
+```
+
+**Wichtig:** Secrets sind in etcd nur Base64-kodiert (nicht verschlüsselt by default).
+Für echte Sicherheit: Secrets verschlüsseln oder **External Secrets Operator** + Key Vault nutzen.
+
+**Merke:** ConfigMap = .env-Datei; Secret = Passwort-Tresor (aber kein echter Vault!)$C$,
+   '["Kubernetes","ConfigMap","Secret","Konfiguration","Environment"]', 'Grundlagen'),
+
+  (v_kubernetes, v_uid, 'Kubernetes Ingress',
+$C$**Ingress** ist der HTTP/HTTPS-Router für Kubernetes — leitet externen Traffic zu internen Services.
+
+## Problem ohne Ingress
+Ohne Ingress braucht jeder Service einen eigenen LoadBalancer (= eigene IP + Kosten).
+
+## Ingress-Lösung
+Ein Ingress-Controller (z.B. nginx, Traefik) nimmt alle HTTP-Anfragen entgegen und routet intern:
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: mein-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules:
+  - host: api.example.com
+    http:
+      paths:
+      - path: /api
+        pathType: Prefix
+        backend:
+          service:
+            name: api-service
+            port:
+              number: 80
+      - path: /shop
+        pathType: Prefix
+        backend:
+          service:
+            name: shop-service
+            port:
+              number: 80
+  tls:
+  - hosts: ["api.example.com"]
+    secretName: tls-secret
+```
+
+## Ingress Controller installieren (nginx)
+```bash
+helm install ingress-nginx ingress-nginx/ingress-nginx
+```
+
+**Merke:** Ingress = Reverse Proxy + Router für HTTP/HTTPS im Cluster$C$,
+   '["Kubernetes","Ingress","Networking","HTTP","Routing"]', 'Netzwerk'),
+
+  (v_kubernetes, v_uid, 'Kubernetes Jobs & CronJobs',
+$C$**Jobs** und **CronJobs** sind für Aufgaben die einmalig oder regelmäßig laufen sollen.
+
+## Job — einmalige Aufgabe
+
+Läuft bis zur Fertigstellung (im Gegensatz zu Deployments die ewig laufen):
+```yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: datenbank-migration
+spec:
+  template:
+    spec:
+      containers:
+      - name: migration
+        image: mein-image:latest
+        command: ["python", "migrate.py"]
+      restartPolicy: OnFailure
+  backoffLimit: 4       # max. 4 Versuche bei Fehler
+  completions: 1        # 1 erfolgreicher Abschluss
+  parallelism: 1        # 1 Pod gleichzeitig
+```
+
+## CronJob — regelmäßige Aufgabe
+
+Wie Linux cron, aber als Kubernetes-Ressource:
+```yaml
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: backup-job
+spec:
+  schedule: "0 2 * * *"   # Täglich um 02:00 Uhr
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: backup
+            image: backup-tool:latest
+          restartPolicy: OnFailure
+```
+
+## Cron-Syntax
+`Minute Stunde Tag Monat Wochentag`
+- `*/5 * * * *` — alle 5 Minuten
+- `0 8 * * 1-5` — werktags um 8 Uhr
+
+**Merke:** Job = einmalig bis Erfolg; CronJob = wiederkehrend nach Zeitplan$C$,
+   '["Kubernetes","Job","CronJob","Batch","Zeitplanung"]', 'Workloads'),
+
+  (v_kubernetes, v_uid, 'Horizontal Pod Autoscaler (HPA)',
+$C$Der **Horizontal Pod Autoscaler (HPA)** skaliert automatisch die Anzahl der Pods basierend auf Metriken.
+
+## Wie funktioniert HPA?
+```
+Metrik (CPU/RAM/Custom) → HPA berechnet Ziel-Replicas → Deployment anpassen
+```
+
+Formel: $\text{Ziel-Replicas} = \lceil \text{Aktuelle Replicas} \times \frac{\text{Aktuelle Metrik}}{\text{Zielwert}} \rceil$
+
+## Beispiel
+```yaml
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: web-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: web-app
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70   # Ziel: 70% CPU-Auslastung
+```
+
+## Voraussetzungen
+- **Metrics Server** muss im Cluster laufen
+- Pods müssen `resources.requests` definiert haben
+
+```bash
+kubectl get hpa
+# NAME      REFERENCE       TARGETS   MINPODS   MAXPODS   REPLICAS
+# web-hpa   Deployment/web  45%/70%   2         10        3
+```
+
+## Custom Metrics
+HPA kann auch auf eigene Metriken reagieren (Requests/s, Queue-Länge) via Prometheus Adapter.
+
+**Merke:** HPA = automatisch mehr Pods bei Last, weniger bei Leerlauf$C$,
+   '["Kubernetes","HPA","Autoscaling","Skalierung","Metriken"]', 'Skalierung'),
+
+  (v_kubernetes, v_uid, 'Kubernetes Helm (Paketmanager)',
+$C$**Helm** ist der Paketmanager für Kubernetes — wie apt/npm, aber für K8s-Manifeste.
+
+## Kernbegriffe
+
+**Chart:** Paket mit allen K8s-Ressourcen einer Anwendung (Deployment, Service, Ingress, etc.)
+
+**Release:** Eine installierte Instanz eines Charts
+
+**Repository:** Sammlung von Charts (wie npm registry)
+
+**Values:** Konfigurationsparameter die beim Install übergeben werden
+
+## Typischer Workflow
+```bash
+# Repository hinzufügen
+helm repo add bitnami https://charts.bitnami.com/bitnami
+helm repo update
+
+# Chart installieren
+helm install mein-postgres bitnami/postgresql \
+  --set auth.postgresPassword=geheim \
+  --set primary.persistence.size=10Gi
+
+# Releases anzeigen
+helm list
+
+# Upgrade
+helm upgrade mein-postgres bitnami/postgresql --set image.tag=15.0
+
+# Deinstallieren
+helm uninstall mein-postgres
+```
+
+## Chart-Struktur
+```
+mein-chart/
+├── Chart.yaml        # Metadaten (Name, Version)
+├── values.yaml       # Standardwerte
+└── templates/        # Jinja-ähnliche K8s-Templates
+    ├── deployment.yaml
+    ├── service.yaml
+    └── _helpers.tpl
+```
+
+## Template-Beispiel
+```yaml
+replicas: {{ .Values.replicaCount }}
+image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+```
+
+**Merke:** Helm = "apt install" für Kubernetes; Values = deine Anpassungen$C$,
+   '["Kubernetes","Helm","Paketmanager","Chart","Deployment"]', 'Tools'),
+
+  (v_kubernetes, v_uid, 'Kubernetes Probes (Health Checks)',
+$C$**Probes** teilen Kubernetes mit, ob ein Container gesund und bereit ist.
+
+## Drei Typen
+
+**Liveness Probe** — Ist der Container am Leben?
+- Wenn fehlgeschlagen: Container wird neu gestartet
+
+**Readiness Probe** — Ist der Container bereit für Traffic?
+- Wenn fehlgeschlagen: Pod wird aus dem Service entfernt (kein Traffic), aber NICHT neugestartet
+
+**Startup Probe** — Hat der Container erfolgreich gestartet?
+- Für langsam startende Apps; Liveness/Readiness pausieren bis Startup erfolgreich
+
+## Beispiel
+```yaml
+spec:
+  containers:
+  - name: api
+    image: meine-api:1.0
+    livenessProbe:
+      httpGet:
+        path: /health
+        port: 8080
+      initialDelaySeconds: 10   # 10s warten vor erstem Check
+      periodSeconds: 15         # alle 15s prüfen
+      failureThreshold: 3       # 3 Fehler = Neustart
+    readinessProbe:
+      httpGet:
+        path: /ready
+        port: 8080
+      initialDelaySeconds: 5
+      periodSeconds: 10
+    startupProbe:
+      httpGet:
+        path: /health
+        port: 8080
+      failureThreshold: 30      # 30 × 10s = 5min für Start
+      periodSeconds: 10
+```
+
+## Probe-Typen
+- `httpGet` — HTTP-Request
+- `exec` — Befehl im Container
+- `tcpSocket` — TCP-Verbindung
+
+**Merke:** Liveness = lebt der Container? Readiness = darf er Traffic bekommen?$C$,
+   '["Kubernetes","Probes","Health Check","Liveness","Readiness"]', 'Betrieb'),
+
+  (v_kubernetes, v_uid, 'Kubernetes Resource Requests & Limits',
+$C$**Requests** und **Limits** steuern den CPU- und RAM-Verbrauch von Pods.
+
+## Konzept
+
+**Request:** Minimum garantierter Ressourcen — Kubernetes-Scheduler nutzt dies zur Pod-Platzierung.
+
+**Limit:** Maximum erlaubter Verbrauch — bei Überschreitung wird der Pod gedrosselt (CPU) oder beendet (RAM).
+
+## Einheiten
+- **CPU:** `1` = 1 vCore, `500m` = 0,5 vCore (m = Milli)
+- **Memory:** `256Mi` = 256 Mebibyte, `1Gi` = 1 Gibibyte
+
+## Beispiel
+```yaml
+resources:
+  requests:
+    cpu: "250m"      # garantiert 0,25 vCore
+    memory: "256Mi"  # garantiert 256 MB
+  limits:
+    cpu: "1"         # max 1 vCore
+    memory: "512Mi"  # max 512 MB → sonst OOMKilled!
+```
+
+## QoS-Klassen (Quality of Service)
+| Klasse | Bedingung | Verhalten |
+|--------|-----------|-----------|
+| `Guaranteed` | requests == limits | Zuletzt beendet |
+| `Burstable` | requests < limits | Mittlere Priorität |
+| `BestEffort` | keine Angaben | Zuerst beendet |
+
+## Warum wichtig?
+- Ohne Requests: Pod kann überall landen, schlechte Performance
+- Ohne Limits: Ein Pod kann den ganzen Node blockieren
+
+**Merke:** Requests = Mindestgarantie; Limits = harte Obergrenze$C$,
+   '["Kubernetes","Resources","CPU","Memory","Limits"]', 'Grundlagen'),
+
+  (v_kubernetes, v_uid, 'kubectl — Wichtige Befehle',
+$C$`kubectl` ist das Kommandozeilen-Tool zur Steuerung von Kubernetes-Clustern.
+
+## Basis-Befehle
+
+```bash
+# Kontext / Cluster wechseln
+kubectl config get-contexts
+kubectl config use-context mein-cluster
+
+# Ressourcen anzeigen
+kubectl get pods                    # alle Pods im aktuellen Namespace
+kubectl get pods -n produktion      # Namespace angeben
+kubectl get pods -A                 # alle Namespaces
+kubectl get all                     # alles anzeigen
+
+# Details anzeigen
+kubectl describe pod mein-pod
+kubectl describe deployment mein-deployment
+
+# Logs
+kubectl logs mein-pod
+kubectl logs mein-pod -c mein-container   # bei mehreren Containern
+kubectl logs -f mein-pod                  # follow (live)
+
+# In Container einsteigen
+kubectl exec -it mein-pod -- /bin/sh
+kubectl exec -it mein-pod -c api -- bash
+```
+
+## Deployment-Befehle
+```bash
+kubectl apply -f manifest.yaml     # erstellen/aktualisieren
+kubectl delete -f manifest.yaml    # löschen
+kubectl delete pod mein-pod        # direkt löschen
+
+kubectl rollout status deployment/web-app
+kubectl rollout history deployment/web-app
+kubectl rollout undo deployment/web-app   # Rollback!
+kubectl scale deployment web-app --replicas=5
+```
+
+## Nützliche Shortcuts
+```bash
+# Port-Forwarding (lokal testen)
+kubectl port-forward pod/mein-pod 8080:80
+
+# Ressourcen beobachten
+kubectl get pods -w   # watch (live updates)
+
+# YAML einer Ressource ausgeben
+kubectl get deployment web-app -o yaml
+```
+
+**Merke:** `kubectl get`, `describe`, `logs`, `exec` — die vier wichtigsten Befehle$C$,
+   '["Kubernetes","kubectl","CLI","Befehle","Tooling"]', 'Tools');
+
   -- ════════════════════════════════════════════════════════════════
   -- DOCKER
   -- ════════════════════════════════════════════════════════════════
@@ -1608,6 +2541,387 @@ healthcheck:
 
 **Kubernetes ignoriert Docker Health Checks** — dort werden `livenessProbe` und `readinessProbe` verwendet$C$,
    '["Docker","Health Check","Monitoring","Produktion"]', 'Operations');
+
+  INSERT INTO cards (box_id, user_id, title, content, tags, category) VALUES
+  (v_docker, v_uid, 'Docker Netzwerk-Typen',
+$C$Docker bietet verschiedene **Netzwerk-Treiber** um zu steuern, wie Container kommunizieren.
+
+## Bridge (Standard)
+Isoliertes privates Netzwerk auf dem Host:
+```bash
+# Standard: docker0 Bridge
+docker run --network bridge nginx
+
+# Eigenes Bridge-Netzwerk (empfohlen!)
+docker network create mein-netz
+docker run --network mein-netz --name api api:latest
+docker run --network mein-netz --name db postgres:15
+# api kann db per Name erreichen: ping db
+```
+
+**Vorteil eigener Bridge:** DNS-Auflösung per Container-Namen!
+
+## Host
+Container teilt Netzwerk-Stack direkt mit dem Host:
+```bash
+docker run --network host nginx
+# nginx läuft auf Port 80 des Hosts direkt
+```
+**Vorteil:** Maximale Performance. **Nachteil:** Keine Isolierung.
+
+## None
+Kein Netzwerk — maximale Isolierung:
+```bash
+docker run --network none mein-sicherheits-job
+```
+
+## Overlay (Docker Swarm)
+Netzwerk über mehrere Docker-Hosts — für Multi-Host-Kommunikation.
+
+## Wichtige Befehle
+```bash
+docker network ls
+docker network inspect mein-netz
+docker network connect mein-netz laufender-container
+docker network disconnect mein-netz laufender-container
+```
+
+**Merke:** Eigenes Bridge-Netzwerk nutzen → Container sprechen per Name miteinander$C$,
+   '["Docker","Netzwerk","Bridge","Network","Kommunikation"]', 'Netzwerk'),
+
+  (v_docker, v_uid, 'Docker Volumes vs Bind Mounts',
+$C$Daten in Containern sind **flüchtig** — sie verschwinden wenn der Container gelöscht wird. Volumes und Bind Mounts lösen das.
+
+## Docker Volumes (empfohlen)
+
+Von Docker verwaltet, liegen in `/var/lib/docker/volumes/`:
+```bash
+# Volume erstellen
+docker volume create meine-daten
+
+# Volume einbinden
+docker run -v meine-daten:/app/data postgres:15
+
+# Volume-Inhalt anzeigen
+docker run --rm -v meine-daten:/data alpine ls /data
+
+# Volumes auflisten / löschen
+docker volume ls
+docker volume rm meine-daten
+docker volume prune   # alle ungenutzten löschen
+```
+
+## Bind Mounts
+Verzeichnis vom Host direkt in Container einbinden:
+```bash
+# Absoluter Pfad vom Host
+docker run -v /home/max/code:/app -p 3000:3000 node:20
+
+# Relative Pfad (PowerShell)
+docker run -v ${PWD}:/app -p 3000:3000 node:20
+```
+**Vorteil:** Ideal für Entwicklung — Datei-Änderungen sofort im Container sichtbar.
+
+## Vergleich
+| Merkmal | Volume | Bind Mount |
+|---------|--------|------------|
+| Verwaltung | Docker | Du |
+| Portabilität | Hoch | Niedrig |
+| Performance | Besser (Linux) | Vergleichbar |
+| Einsatz | Produktion, DBs | Entwicklung |
+
+**Merke:** Volumes für Produktion (DB-Daten), Bind Mounts für Entwicklung (Code-Hot-Reload)$C$,
+   '["Docker","Volumes","Bind Mount","Persistenz","Datenspeicherung"]', 'Storage'),
+
+  (v_docker, v_uid, 'Docker Multi-Stage Build',
+$C$**Multi-Stage Builds** erzeugen schlanke Produktions-Images — nur das Nötigste landet im finalen Image.
+
+## Problem ohne Multi-Stage
+Ein Node.js-Build-Image enthält npm, node_modules, Quellcode, Tests — alles unnötig in Produktion.
+
+## Lösung: Mehrere FROM-Stufen
+```dockerfile
+# ── Stage 1: Build ──────────────────────────────
+FROM node:20-alpine AS builder
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci                    # alle Dependencies inkl. devDeps
+COPY . .
+RUN npm run build             # kompiliert TypeScript → dist/
+
+# ── Stage 2: Production ─────────────────────────
+FROM node:20-alpine AS production
+WORKDIR /app
+ENV NODE_ENV=production
+COPY package*.json ./
+RUN npm ci --omit=dev         # NUR production dependencies
+COPY --from=builder /app/dist ./dist   # nur das Build-Artefakt
+EXPOSE 3000
+CMD ["node", "dist/server.js"]
+```
+
+## Ergebnis
+| Image | Größe |
+|-------|-------|
+| Ohne Multi-Stage | ~800 MB |
+| Mit Multi-Stage | ~120 MB |
+
+## Build-Argumente
+```bash
+# Nur bestimmte Stage bauen
+docker build --target builder -t mein-app:builder .
+# Finale Stage
+docker build -t mein-app:prod .
+```
+
+**Merke:** Multi-Stage = kleinere Images, schnellere Deployments, weniger Angriffsfläche$C$,
+   '["Docker","Multi-Stage","Build","Optimierung","Image"]', 'Best Practices'),
+
+  (v_docker, v_uid, 'Docker Compose — Netzwerke & Abhängigkeiten',
+$C$Docker Compose verwaltet automatisch Netzwerke zwischen Services.
+
+## Automatisches Netzwerk
+Compose erstellt ein Standard-Bridge-Netzwerk für alle Services im File — sie sprechen per Servicename:
+
+```yaml
+services:
+  api:
+    build: ./api
+    # Kann "db" per Name erreichen!
+    environment:
+      DATABASE_URL: postgres://postgres:pass@db:5432/mydb
+
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_PASSWORD: pass
+
+  redis:
+    image: redis:7-alpine
+```
+
+## Abhängigkeiten
+```yaml
+services:
+  api:
+    depends_on:
+      db:
+        condition: service_healthy  # warten bis DB healthy
+  db:
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 5s
+      retries: 5
+```
+
+## Eigene Netzwerke
+```yaml
+networks:
+  frontend:
+  backend:
+
+services:
+  nginx:
+    networks: [frontend, backend]  # beide Netzwerke
+  api:
+    networks: [backend]
+  db:
+    networks: [backend]            # nginx kann nicht direkt auf db!
+```
+
+## Nützliche Befehle
+```bash
+docker compose up -d        # im Hintergrund starten
+docker compose logs -f api  # Logs eines Services
+docker compose ps           # Status aller Services
+docker compose down -v      # stoppen + Volumes löschen
+docker compose exec api sh  # in Service-Container einsteigen
+```
+
+**Merke:** Servicename = Hostname; depends_on + healthcheck für korrekte Startreihenfolge$C$,
+   '["Docker","Compose","Netzwerk","Service Discovery","Abhängigkeiten"]', 'Tools'),
+
+  (v_docker, v_uid, 'Dockerfile Best Practices',
+$C$Gute Dockerfiles erzeugen **kleine**, **sichere** und **cacheable** Images.
+
+## Layer-Caching verstehen
+Jede `RUN`, `COPY`, `ADD`-Zeile = neuer Layer. Cache wird ungültig wenn sich etwas ändert:
+```dockerfile
+# SCHLECHT: Jede Code-Änderung installiert npm neu
+COPY . .
+RUN npm ci
+
+# GUT: Dependencies erst kopieren (ändert sich selten)
+COPY package*.json ./
+RUN npm ci              # bleibt im Cache bis package.json sich ändert
+COPY . .                # Quellcode danach
+```
+
+## Schlanke Base-Images
+```dockerfile
+# SCHLECHT: zu groß
+FROM node:20
+
+# GUT: Alpine-basiert (~5x kleiner)
+FROM node:20-alpine
+
+# NOCH BESSER: Distroless (nur Runtime, kein Shell!)
+FROM gcr.io/distroless/nodejs:20
+```
+
+## Sicherheit
+```dockerfile
+# Nicht als root laufen
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+USER appuser
+
+# Spezifische Versionen pinnen (keine :latest in Produktion)
+FROM node:20.11.1-alpine3.19
+
+# .dockerignore nutzen
+# → node_modules, .env, .git nicht ins Image kopieren
+```
+
+## .dockerignore
+```
+node_modules/
+.env
+.git/
+*.log
+dist/
+```
+
+## Zusammenfassung
+1. Kleine Base-Images (alpine/distroless)
+2. Layer-Reihenfolge optimieren (selten änderndes zuerst)
+3. Nicht als root laufen
+4. .dockerignore pflegen
+5. Spezifische Tags pinnen
+6. Multi-Stage für Build-Artefakte
+
+**Merke:** Ein gutes Dockerfile ist klein, deterministisch und nicht-root$C$,
+   '["Docker","Best Practices","Dockerfile","Sicherheit","Optimierung"]', 'Best Practices'),
+
+  (v_docker, v_uid, 'Docker Security Grundlagen',
+$C$Container sind **keine VMs** — sie teilen den Kernel des Hosts. Sicherheit ist wichtig!
+
+## Risiken
+
+**Root-Container:** Standard ist root — wenn der Container kompromittiert wird, ist der Host gefährdet.
+```dockerfile
+# Lösung: Non-root User
+USER 1001
+```
+
+**Privileged Mode:** Gibt dem Container fast alle Kernel-Capabilities:
+```bash
+# Nur wenn wirklich nötig!
+docker run --privileged mein-container
+```
+
+## Capabilities
+Linux-Kernel-Capabilities einzeln steuern:
+```bash
+docker run \
+  --cap-drop ALL \           # alle Capabilities entfernen
+  --cap-add NET_BIND_SERVICE \  # nur diese eine erlauben
+  nginx
+```
+
+## Read-Only Filesystem
+```bash
+docker run --read-only \
+  --tmpfs /tmp \             # nur /tmp ist schreibbar
+  mein-app
+```
+
+## Image-Scanning
+```bash
+# Docker Scout (integriert)
+docker scout cves mein-image:latest
+
+# Trivy (Open Source)
+trivy image mein-image:latest
+```
+
+## Rootless Docker
+Docker Daemon als nicht-root User laufen lassen — isoliert Host besser.
+
+## Checkliste
+- Non-root User im Dockerfile
+- Minimale Base-Images
+- Image regelmäßig scannen
+- Secrets nicht in ENV-Variablen (Key Vault nutzen)
+- Read-only Filesystem wo möglich
+
+**Merke:** Least Privilege Prinzip: so wenig Rechte wie nötig$C$,
+   '["Docker","Security","Sicherheit","Capabilities","Rootless"]', 'Sicherheit'),
+
+  (v_docker, v_uid, 'Docker Logs & Debugging',
+$C$Effektives Debugging ist entscheidend wenn Container-Anwendungen nicht funktionieren.
+
+## Logs lesen
+```bash
+# Logs eines Containers
+docker logs mein-container
+
+# Mit Zeitstempeln
+docker logs --timestamps mein-container
+
+# Nur letzte 50 Zeilen
+docker logs --tail 50 mein-container
+
+# Live-Logs (follow)
+docker logs -f mein-container
+
+# Logs seit Zeitpunkt
+docker logs --since 1h mein-container
+docker logs --since 2024-01-15T10:00:00 mein-container
+```
+
+## Container untersuchen
+```bash
+# In laufenden Container einsteigen
+docker exec -it mein-container /bin/sh
+
+# Einzelnen Befehl ausführen
+docker exec mein-container ls /app
+
+# Prozesse im Container anzeigen
+docker top mein-container
+
+# Ressourcenverbrauch live
+docker stats
+docker stats mein-container
+```
+
+## Container inspizieren
+```bash
+# Alle Details als JSON
+docker inspect mein-container
+
+# Spezifische Felder (Go-Template)
+docker inspect --format='{{.State.Status}}' mein-container
+docker inspect --format='{{.NetworkSettings.IPAddress}}' mein-container
+
+# Dateisystem-Änderungen anzeigen
+docker diff mein-container
+```
+
+## Gestoppte Container debuggen
+```bash
+# Gestoppte Container anzeigen
+docker ps -a
+
+# Container-Logs nach Crash
+docker logs --tail 100 mein-container
+
+# Image mit anderem Entrypoint starten
+docker run --entrypoint /bin/sh mein-image:latest
+```
+
+**Merke:** `docker logs -f` für live, `docker exec -it ... sh` für interaktives Debuggen$C$,
+   '["Docker","Debugging","Logs","Troubleshooting","Betrieb"]', 'Operations');
 
   -- ════════════════════════════════════════════════════════════════
   -- SCRUM
@@ -2133,6 +3447,896 @@ $C$Scrum funktioniert optimal für ein Team. Für größere Organisationen gibt 
 **Spotify Model:** (kein Framework, Inspiration)
 - Squads (Teams), Tribes (Abteilungen), Chapters (Fachbereiche), Guilds (Communities)$C$,
    '["Scrum","Skalierung","SAFe","LeSS","Nexus"]', 'Skalierung');
+
+  INSERT INTO cards (box_id, user_id, title, content, tags, category) VALUES
+  (v_scrum, v_uid, 'User Story Format',
+$C$Eine **User Story** beschreibt eine Funktion aus Nutzerperspektive.
+
+## Das Format
+
+> Als **[Rolle]** möchte ich **[Funktion]**, damit **[Nutzen]**.
+
+## Beispiele
+- Als *Kunde* möchte ich *meine Bestellung verfolgen*, damit *ich weiß, wann sie ankommt*.
+- Als *Administrator* möchte ich *Nutzer deaktivieren können*, damit *keine unbefugten Zugriffe entstehen*.
+- Als *Entwickler* möchte ich *eine CI-Pipeline haben*, damit *Fehler früh gefunden werden*.
+
+## Epic vs. Story vs. Task
+```
+Epic (groß, ≥1 Sprint)
+  └─ User Story (1 Sprint passt)
+        └─ Task (Stunden, technisch)
+```
+
+**Epic:** "Als Nutzer möchte ich mich registrieren und einloggen können."
+**Story:** "Als Nutzer möchte ich mich per E-Mail registrieren, damit ich ein Konto erstelle."
+**Task:** "Registrierungsformular UI implementieren"
+
+## Gute User Stories: INVEST
+| Buchstabe | Bedeutung |
+|-----------|-----------|
+| **I**ndependent | Unabhängig lieferbar |
+| **N**egotiable | Details verhandelbar |
+| **V**aluable | Wert für Nutzer/Kunde |
+| **E**stimable | Schätzbar |
+| **S**mall | Klein genug für Sprint |
+| **T**estable | Testbar mit Akzeptanzkriterien |
+
+**Merke:** User Stories = Anforderungen aus Nutzersicht, NICHT technische Specs$C$,
+   '["Scrum","User Story","INVEST","Format","Anforderungen"]', 'Grundlagen'),
+
+  (v_scrum, v_uid, 'Akzeptanzkriterien & Definition of Ready',
+$C$**Akzeptanzkriterien** definieren, wann eine Story *fertig und akzeptiert* ist.
+
+## Akzeptanzkriterien
+
+Jede User Story braucht klare Testbedingungen:
+
+**Format: Given-When-Then (Gherkin)**
+```
+Gegeben dass ein Nutzer eingeloggt ist
+Wenn er auf "Bestellung aufgeben" klickt
+Dann wird die Bestellung gespeichert
+  Und er erhält eine Bestätigungs-E-Mail
+  Und der Warenkorb wird geleert
+```
+
+**Alternativ:** Checkliste
+- [ ] E-Mail-Validierung zeigt Fehlermeldung bei falscher Adresse
+- [ ] Passwort muss mind. 8 Zeichen haben
+- [ ] Login-Button deaktiviert während Request läuft
+
+## Definition of Ready (DoR)
+Kriterien, bevor eine Story ins Sprint Planning darf:
+- User Story im korrekten Format
+- Akzeptanzkriterien vorhanden
+- Abhängigkeiten geklärt
+- Story geschätzt (Story Points)
+- UX-Design vorhanden (wenn nötig)
+- Keine offenen Fragen
+
+**Merke:** DoR = Story ist *bereit für Sprint*; DoD = Story ist *fertig und auslieferbar*$C$,
+   '["Scrum","Akzeptanzkriterien","Definition of Ready","DoR","Testing"]', 'Qualität'),
+
+  (v_scrum, v_uid, 'Story Points & Velocity',
+$C$**Story Points** sind eine relative Maßeinheit für den Aufwand einer User Story.
+
+## Was sind Story Points?
+
+Kein Zeitmaß! Story Points messen:
+- Komplexität
+- Risiko / Unsicherheit
+- Menge der Arbeit
+
+## Fibonacci-Skala
+Üblich: `1, 2, 3, 5, 8, 13, 21, 40, 100`
+
+Exponentiell, weil Unsicherheit bei großen Aufgaben wächst.
+
+## Planning Poker
+1. Jeder schätzt heimlich (Karten)
+2. Alle decken gleichzeitig auf
+3. Ausreißer diskutieren ihren Standpunkt
+4. Erneut schätzen bis Konsens
+
+**Ziel:** Gemeinsames Verständnis der Story, nicht exakte Zeitschätzung!
+
+## Velocity
+
+Durchschnittliche Story Points pro Sprint:
+$$V = \frac{\sum \text{abgeschlossene Story Points}}{\text{Anzahl Sprints}}$$
+
+**Beispiel:** Team schließt 3 Sprints mit 34, 38, 36 Punkten ab:
+$$V = \frac{34 + 38 + 36}{3} = 36 \text{ Points/Sprint}$$
+
+## Forecast mit Velocity
+Backlog hat 180 Punkte → $\frac{180}{36} = 5$ Sprints bis Fertig.
+
+**Merke:** Story Points = Relative Schätzung; Velocity = Team-Leistung über Zeit$C$,
+   '["Scrum","Story Points","Velocity","Schätzung","Planning Poker"]', 'Planung'),
+
+  (v_scrum, v_uid, 'Burndown Chart & Burnup Chart',
+$C$**Burndown** und **Burnup Charts** visualisieren den Fortschritt im Sprint oder Release.
+
+## Sprint Burndown Chart
+
+X-Achse: Tage im Sprint | Y-Achse: verbleibende Story Points
+
+```
+40 |●
+35 | ╲   ← Ideal-Linie
+30 |  ●╲
+25 |   ╲ ●
+20 |    ╲  ●
+15 |     ╲   ● ← Tatsächlich (langsamer)
+10 |      ╲
+ 5 |       ╲
+ 0 |________╲___________
+   Tag1 2 3 4 5 6 7 8 9 10
+```
+
+**Ideal-Linie:** Gleichmäßiger Abbau der Punkte.
+**Abweichungen:** Sprint wird nicht vollständig fertig wenn Linie über Null bleibt.
+
+## Burnup Chart
+Zeigt *abgeschlossene* Arbeit (steigt von 0 nach oben) + Gesamtumfang:
+- Besser sichtbar wenn Scope wächst (Gesamtlinie steigt)
+- Burndown: totaler Scope ändert sich unsichtbar
+
+## Release Burndown
+Über mehrere Sprints: Wann ist das Release fertig?
+
+**Merke:** Burndown = wie viel übrig? Burnup = wie viel geschafft? (+ Scope-Änderungen sichtbar)$C$,
+   '["Scrum","Burndown","Burnup","Fortschritt","Metriken"]', 'Metriken'),
+
+  (v_scrum, v_uid, 'Scrum Anti-Patterns',
+$C$**Anti-Patterns** sind häufige Fehler bei der Scrum-Einführung.
+
+## Top Anti-Patterns
+
+**Mini-Waterfall (Scrumfall)**
+Sprint-Phasen wie Wasserfall: "Woche 1 Design, Woche 2 Dev, Woche 3 Test"
+→ Kein potenziell auslieferbares Inkrement am Sprint-Ende
+
+**Daily Scrum als Status-Meeting**
+Product Owner fragt jeden: "Was hast du gestern gemacht?"
+→ Kein Austausch, keine Hindernisse identifiziert
+
+**Sprint Scope creep**
+Neue Anforderungen werden mitten im Sprint hinzugefügt
+→ Scrum schützt das Team vor Unterbrechungen; Neues geht ins Backlog
+
+**Proxy Product Owner**
+PO hat keine Entscheidungsbefugnis, muss alles eskalieren
+→ Team blockiert, kein schnelles Feedback möglich
+
+**Keine echte Definition of Done**
+Stories werden als fertig markiert ohne Tests, Deployment, Doku
+→ "Technische Schuld" häuft sich an
+
+**Backlog ist eine Aufgabenliste**
+Tasks statt User Stories, keine Priorisierung nach Wert
+→ Kein Kundenfokus
+
+**Sprint Review ohne echte Stakeholder**
+Nur internes Team zeigt Ergebnisse → kein Kundenfeedback
+
+**Merke:** Scrum scheitert meist an Menschen und Kultur, nicht am Prozess$C$,
+   '["Scrum","Anti-Pattern","Fehler","Einführung","Kultur"]', 'Qualität'),
+
+  (v_scrum, v_uid, 'Technische Schulden in Scrum',
+$C$**Technische Schulden (Technical Debt)** entstehen wenn schnelle Lösungen langfristige Wartbarkeit opfern.
+
+## Was sind Technische Schulden?
+
+> "Technische Schulden sind der zukünftige Mehraufwand, der durch eine jetzt getroffene suboptimale Lösung entsteht."
+
+Wie finanzielle Schulden: schnell aufgenommen, teuer zurückzuzahlen.
+
+## Arten
+- **Absichtlich:** "Wir hacken das jetzt, refactorn später" (oft wird "später" nie)
+- **Unabsichtlich:** Schlechte Entscheidung ohne es zu wissen
+- **Bit-Rot:** Gut implementiert, aber durch Änderungen überholt
+
+## Technische Schulden in Scrum managen
+
+**Option 1: % der Sprint-Kapazität reservieren**
+```
+Sprint-Kapazität: 40 Story Points
+Neu-Features: 32 Punkte (80%)
+Tech-Schulden: 8 Punkte (20%)
+```
+
+**Option 2: Refactoring in DoD aufnehmen**
+Keine Story ohne sauberen Code als fertig markieren.
+
+**Option 3: Explizit im Backlog**
+Tech-Schulden als eigene Backlog-Items (technische Stories).
+
+## Definition of Done gegen Schulden
+```
+✓ Code reviewed
+✓ Unit Tests vorhanden (>80% Coverage)
+✓ Keine kritischen SonarQube-Warnungen
+✓ Auf Staging deployt und getestet
+```
+
+**Merke:** Technische Schulden sind normal — wichtig ist, sie sichtbar zu halten und abzubauen$C$,
+   '["Scrum","Technical Debt","Refactoring","Qualität","DoD"]', 'Qualität');
+
+  -- ════════════════════════════════════════════════════════════════
+  -- DEVOPS
+  -- ════════════════════════════════════════════════════════════════
+
+  INSERT INTO cards (box_id, user_id, title, content, tags, category) VALUES
+  (v_devops, v_uid, 'Was ist DevOps?',
+$C$**DevOps** ist eine Kultur, Bewegung und Praxis, die **Entwicklung (Dev)** und **Betrieb (Ops)** vereint.
+
+## Das Problem vorher
+
+```
+Dev:  "Der Code läuft bei mir!"
+Ops:  "Auf dem Server läuft er nicht!"
+```
+Getrennte Teams, unterschiedliche Ziele, langsame Releases, gegenseitige Schuldzuweisungen.
+
+## DevOps-Lösung
+- **Gemeinsame Verantwortung** für den gesamten Lebenszyklus
+- **Automatisierung** von Build, Test, Deploy, Betrieb
+- **Feedback-Schleifen** verkürzen (schneller auf Probleme reagieren)
+- **Kontinuierliche Verbesserung** (Kaizen)
+
+## DevOps-Lebenszyklus (Infinity-Symbol)
+```
+Plan → Code → Build → Test → Release → Deploy → Operate → Monitor
+                                                         ↑_____|
+```
+
+## CALMS-Framework
+| Buchstabe | Bedeutung |
+|-----------|-----------|
+| **C**ulture | Zusammenarbeit, Vertrauen, Fehlerkultur |
+| **A**utomation | Alles automatisieren was automatisiert werden kann |
+| **L**ean | Verschwendung eliminieren, Flow optimieren |
+| **M**easurement | Metriken messen, datengetrieben entscheiden |
+| **S**haring | Wissen und Tools teilen |
+
+## DevOps ≠ ein Tool
+DevOps ist primär eine **Kultur**, sekundär Tools und Prozesse.
+
+**Merke:** DevOps = Dev + Ops + Kultur + Automatisierung → schnellere, zuverlässigere Releases$C$,
+   '["DevOps","Grundlagen","Kultur","CALMS","Überblick"]', 'Grundlagen'),
+
+  (v_devops, v_uid, 'CI/CD — Continuous Integration & Delivery',
+$C$**CI/CD** automatisiert das Testen und Ausliefern von Software.
+
+## Continuous Integration (CI)
+Entwickler integrieren Code **mehrmals täglich** in einen gemeinsamen Branch.
+Jeder Commit triggert automatisch:
+1. Build (kompilieren)
+2. Unit Tests ausführen
+3. Statische Code-Analyse (Linting, SAST)
+4. Feedback an Entwickler (grün/rot)
+
+**Ziel:** Fehler früh finden, bevor sie sich stapeln.
+
+## Continuous Delivery (CD)
+Jeder erfolgreiche CI-Build ist **bereit zum Deployment** (in Staging):
+```
+CI ✅ → Staging Deployment → manuelle Freigabe → Produktion
+```
+
+## Continuous Deployment
+Jeder erfolgreiche Build geht **automatisch in Produktion**:
+```
+CI ✅ → Staging → Auto-Deploy → Produktion
+```
+
+## Typische CI/CD-Pipeline
+```yaml
+stages:
+  - name: build
+    run: npm run build
+  - name: test
+    run: npm test
+  - name: lint
+    run: npm run lint
+  - name: deploy-staging
+    run: deploy.sh staging
+  - name: e2e-tests
+    run: playwright test
+  - name: deploy-production
+    run: deploy.sh production
+    when: manual
+```
+
+## Vorteile
+- Schnellere Releases (Tage statt Monate)
+- Frühe Fehlererkennung
+- Geringeres Deployment-Risiko (kleine Änderungen)
+- Immer deploybare Codebasis
+
+**Merke:** CI = automatisch testen; CD = automatisch ausliefern$C$,
+   '["DevOps","CI/CD","Pipeline","Continuous Integration","Automation"]', 'CI/CD'),
+
+  (v_devops, v_uid, 'GitHub Actions',
+$C$**GitHub Actions** ist die in GitHub integrierte CI/CD-Plattform.
+
+## Grundkonzepte
+- **Workflow:** Automatisierungsprozess (YAML-Datei in `.github/workflows/`)
+- **Event:** Trigger (push, pull_request, schedule, workflow_dispatch)
+- **Job:** Gruppe von Steps, läuft auf einem Runner
+- **Step:** Einzelner Befehl oder Action
+- **Runner:** Virtuelle Maschine (ubuntu-latest, windows-latest, macos-latest)
+
+## Beispiel-Workflow
+```yaml
+# .github/workflows/ci.yml
+name: CI Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Code auschecken
+        uses: actions/checkout@v4
+
+      - name: Node.js einrichten
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Dependencies installieren
+        run: npm ci
+
+      - name: Tests ausführen
+        run: npm test
+
+      - name: Build erstellen
+        run: npm run build
+
+  deploy:
+    needs: test          # erst nach erfolgreichem Test
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Auf Server deployen
+        run: ./deploy.sh
+        env:
+          DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
+```
+
+## Secrets & Variablen
+- `${{ secrets.MEIN_SECRET }}` — verschlüsselt in GitHub gespeichert
+- `${{ vars.API_URL }}` — Nicht-sensitive Variablen
+- `${{ github.sha }}` — Commit-Hash
+- `${{ github.actor }}` — Wer hat den Push ausgelöst
+
+## Marketplace Actions
+Tausende vorgefertigte Actions: Docker push, Azure Deploy, Slack Notify...
+
+**Merke:** YAML-Datei in `.github/workflows/` → automatische CI/CD bei jedem Push$C$,
+   '["DevOps","GitHub Actions","CI/CD","Workflow","Automation"]', 'CI/CD'),
+
+  (v_devops, v_uid, 'Git Branching-Strategien',
+$C$Eine **Branching-Strategie** definiert, wie Teams mit Git-Branches arbeiten.
+
+## Git Flow (klassisch)
+
+Für Releases mit festen Versionen:
+```
+main (Produktion)
+  └─ develop (Integration)
+       ├─ feature/login
+       ├─ feature/checkout
+       └─ release/v1.2
+hotfix/kritischer-bug → direkt in main + develop
+```
+**Vorteil:** Klare Struktur für mehrere Versionen.
+**Nachteil:** Komplex, lange Feature-Branches, seltene Integrations.
+
+## Trunk-Based Development (TBD)
+
+Alle Entwickler committen täglich auf `main` (oder kurzlebige Feature-Branches ≤2 Tage):
+```
+main ←── feature/A (1 Tag)
+     ←── feature/B (2 Tage)
+     ←── bugfix/X  (Stunden)
+```
+**Vorteil:** Schnelle Integration, weniger Merge-Konflikte, CI/CD freundlich.
+**Nachteil:** Erfordert Feature Flags für unfertige Features.
+
+## GitHub Flow (vereinfacht)
+
+```
+main ← Pull Request ← feature-branch
+```
+1. Branch von main
+2. Commits
+3. Pull Request öffnen
+4. Code Review
+5. Merge in main → automatisches Deployment
+
+## Empfehlung
+| Team | Strategie |
+|------|-----------|
+| Kleine Teams, Web-Apps | GitHub Flow / TBD |
+| Mehrere Release-Versionen | Git Flow |
+| Enterprise CI/CD | Trunk-Based |
+
+**Merke:** Trunk-Based + Feature Flags = schnellste CI/CD-Zyklen$C$,
+   '["DevOps","Git","Branching","GitFlow","Trunk-Based"]', 'Versionskontrolle'),
+
+  (v_devops, v_uid, 'Infrastructure as Code (IaC)',
+$C$**Infrastructure as Code (IaC)** bedeutet: Infrastruktur (Server, Netzwerke, Datenbanken) wird wie Code in Dateien definiert und versioniert.
+
+## Warum IaC?
+
+**Ohne IaC:** Klick-Ops im Portal, schlecht reproduzierbar, Fehler beim manuellen Setup.
+
+**Mit IaC:**
+- Reproduzierbar: gleiches Setup in dev, staging, prod
+- Versioniert: Git-History für Infrastruktur
+- Automatisierbar: CI/CD deployt Infrastruktur
+- Dokumentiert: der Code IST die Dokumentation
+
+## Deklarativ vs. Imperativ
+
+**Deklarativ:** Du beschreibst *was* du haben willst:
+```hcl
+resource "aws_instance" "web" {
+  ami           = "ami-0c55b159cbfafe1f0"
+  instance_type = "t2.micro"
+}
+```
+Tools: Terraform, Pulumi, CloudFormation, ARM Templates
+
+**Imperativ:** Du beschreibst *wie* es erstellt wird:
+```bash
+aws ec2 run-instances --image-id ami-0c55b159cbfafe1f0 \
+  --instance-type t2.micro
+```
+
+## IaC-Tools im Vergleich
+| Tool | Cloud | Sprache |
+|------|-------|---------|
+| Terraform | Alle | HCL |
+| Pulumi | Alle | TypeScript/Python/Go |
+| CloudFormation | AWS | YAML/JSON |
+| ARM/Bicep | Azure | JSON/Bicep |
+| Ansible | Alle | YAML (Playbooks) |
+
+**Merke:** IaC = Infrastruktur in Git; niemals manuell im Portal klicken was auch Code kann$C$,
+   '["DevOps","IaC","Terraform","Infrastructure","Automatisierung"]', 'IaC'),
+
+  (v_devops, v_uid, 'Terraform Grundlagen',
+$C$**Terraform** ist das populärste IaC-Tool — cloud-agnostisch und deklarativ.
+
+## Kernkonzepte
+
+**Provider:** Plugin für einen Cloud-Anbieter:
+```hcl
+terraform {
+  required_providers {
+    azurerm = {
+      source  = "hashicorp/azurerm"
+      version = "~> 3.0"
+    }
+  }
+}
+provider "azurerm" {
+  features {}
+}
+```
+
+**Resource:** Eine Infrastruktur-Komponente:
+```hcl
+resource "azurerm_resource_group" "main" {
+  name     = "meine-rg"
+  location = "Germany West Central"
+}
+
+resource "azurerm_storage_account" "storage" {
+  name                = "meinstorage123"
+  resource_group_name = azurerm_resource_group.main.name
+  location            = azurerm_resource_group.main.location
+  account_tier        = "Standard"
+  account_replication_type = "LRS"
+}
+```
+
+## Terraform Workflow
+```bash
+terraform init      # Provider herunterladen
+terraform plan      # Änderungen anzeigen (Dry-Run)
+terraform apply     # Änderungen anwenden
+terraform destroy   # Alles löschen
+```
+
+## State
+Terraform merkt sich den aktuellen Zustand in `terraform.tfstate`:
+- Lokal: Datei im Projektverzeichnis
+- Remote: Azure Blob Storage, S3, Terraform Cloud (für Teams!)
+
+## Variablen
+```hcl
+variable "environment" {
+  type    = string
+  default = "dev"
+}
+resource "azurerm_resource_group" "main" {
+  name = "rg-${var.environment}"
+}
+```
+
+**Merke:** `plan` zeigt was sich ändert; `apply` macht es; State ist das Gedächtnis von Terraform$C$,
+   '["DevOps","Terraform","IaC","HCL","Azure"]', 'IaC'),
+
+  (v_devops, v_uid, 'Monitoring & Observability',
+$C$**Observability** beschreibt die Fähigkeit, den internen Zustand eines Systems aus seinen Ausgaben zu verstehen.
+
+## Die drei Säulen
+
+**1. Logs** — Was ist passiert?
+```json
+{"timestamp": "2024-01-15T10:23:45Z", "level": "ERROR",
+ "message": "DB connection failed", "service": "api", "traceId": "abc123"}
+```
+- Strukturiert (JSON) statt plain text
+- Zentral aggregiert (ELK Stack, Loki, Azure Monitor)
+
+**2. Metrics** — Wie verhält sich das System?
+Numerische Werte über die Zeit:
+- `http_requests_total{status="200"}` — Anzahl erfolgreicher Requests
+- `cpu_usage_percent` — CPU-Auslastung
+- `db_query_duration_seconds` — DB-Antwortzeit
+
+Tools: Prometheus, Grafana, Datadog, Azure Monitor
+
+**3. Traces** — Wo verliert eine Anfrage Zeit?
+Verfolgt eine Anfrage durch alle Services (Distributed Tracing):
+```
+Request → API (5ms) → Auth Service (12ms) → DB (450ms!) → Response
+```
+Tools: Jaeger, Zipkin, OpenTelemetry
+
+## OpenTelemetry
+Offener Standard für Telemetriedaten (Logs, Metrics, Traces) — herstellerneutral.
+
+## Alerting
+```
+Metric: p99 Latenz > 1s für 5 min → Alert → PagerDuty/Slack
+```
+
+**Merke:** Logs = Was, Metrics = Wie viel/oft, Traces = Wo/Wie lang$C$,
+   '["DevOps","Monitoring","Observability","Logs","Metriken"]', 'Monitoring'),
+
+  (v_devops, v_uid, 'SLI / SLO / SLA',
+$C$**SLI, SLO und SLA** sind Werkzeuge um Service-Qualität messbar zu machen.
+
+## SLI — Service Level Indicator
+Eine **messbare Kennzahl** für die Service-Qualität:
+- Verfügbarkeit: `requests_erfolgreiche / requests_gesamt × 100`
+- Latenz: p99 Response-Zeit
+- Fehlerrate: `Fehler / requests_gesamt × 100`
+- Durchsatz: Requests pro Sekunde
+
+## SLO — Service Level Objective
+Das **interne Ziel** für einen SLI:
+```
+Verfügbarkeit SLO: 99,9% (über 30 Tage)
+Latenz SLO: p99 < 200ms
+```
+
+Formel für erlaubte Ausfallzeit:
+$$\text{Ausfallzeit} = (1 - \text{SLO}) \times \text{Zeitraum}$$
+
+Beispiel 99,9%: $(1 - 0{,}999) \times 30 \text{ Tage} = 43{,}2 \text{ Minuten/Monat}$
+
+## Error Budget
+$(1 - \text{SLO}) \times \text{Zeitraum}$ = erlaubte Ausfallzeit ("Budget")
+- Budget aufgebraucht → keine neuen Features, nur Stabilitäts-Fixes
+- Budget vorhanden → schnell deployen ist OK
+
+## SLA — Service Level Agreement
+Das **vertragliche Versprechen** an den Kunden:
+- SLO ist intern (strenger), SLA ist extern (kundengerichtet)
+- Bei SLA-Verletzung: finanzielle Konsequenzen (Credits, Rückerstattungen)
+
+**Merke:** SLI misst, SLO ist das Ziel, SLA ist der Vertrag. Error Budget = Risikopuffer$C$,
+   '["DevOps","SLI","SLO","SLA","SRE"]', 'SRE'),
+
+  (v_devops, v_uid, 'DORA Metrics',
+$C$**DORA Metrics** (DevOps Research & Assessment) sind vier Schlüsselkennzahlen für DevOps-Performance.
+
+## Die vier DORA-Metriken
+
+**1. Deployment Frequency** — Wie oft wird deployed?
+| Elite | High | Medium | Low |
+|-------|------|--------|-----|
+| On-demand / mehrfach tägl. | 1x tägl. – 1x wöchentl. | 1x wöchentl. – 1x monatl. | < 1x monatl. |
+
+**2. Lead Time for Changes** — Commit bis Produktion?
+| Elite | High | Medium | Low |
+|-------|------|--------|-----|
+| < 1 Stunde | 1 Tag – 1 Woche | 1 Woche – 1 Monat | > 1 Monat |
+
+**3. Change Failure Rate** — Wie viele Deployments verursachen Probleme?
+| Elite | High | Medium | Low |
+|-------|------|--------|-----|
+| 0-5% | 5-10% | 10-15% | 15-45% |
+
+**4. Mean Time to Recovery (MTTR)** — Wie lange bis Wiederherstellung?
+| Elite | High | Medium | Low |
+|-------|------|--------|-----|
+| < 1 Stunde | < 1 Tag | 1 Tag – 1 Woche | > 1 Woche |
+
+## Warum DORA-Metriken?
+
+Forschung (5000+ Teams) zeigt: Elite-Teams haben **7x weniger Ausfälle** und **2555x schnellere Deployments** als Low-Teams.
+
+Gute Geschwindigkeit (Freq + Lead Time) geht **nicht auf Kosten** von Stabilität (Failure Rate + MTTR) — im Gegenteil!
+
+**Merke:** DORA misst DevOps-Reifegrad: Schnell UND stabil ist möglich!$C$,
+   '["DevOps","DORA","Metriken","Performance","Messung"]', 'Metriken'),
+
+  (v_devops, v_uid, 'Blue-Green & Canary Deployment',
+$C$**Deployment-Strategien** reduzieren das Risiko beim Ausrollen neuer Software-Versionen.
+
+## Blue-Green Deployment
+
+Zwei identische Produktionsumgebungen (Blue = alt, Green = neu):
+```
+Internet → Load Balancer → Blue (v1, aktuell live)
+                        → Green (v2, im Test)
+```
+1. v2 auf Green deployen und testen
+2. Load Balancer auf Green umschalten (kein Downtime!)
+3. Blue bleibt als Rollback bereit
+4. Nach Bestätigung: Blue = neues Staging
+
+**Vorteil:** Sofortiger Rollback (einfach zurückschalten).
+**Nachteil:** Doppelte Infrastrukturkosten.
+
+## Canary Deployment
+
+Neue Version wird **schrittweise** für mehr Nutzer ausgerollt:
+```
+100% Nutzer → v1 (stabil)
+
+5% Nutzer → v2 (Canary) | 95% → v1
+↓ Metriken OK?
+20% → v2 | 80% → v1
+↓ Metriken OK?
+100% → v2 (vollständig ausgerollt)
+```
+
+**Vorteil:** Echtes Nutzer-Feedback vor vollem Rollout; minimale Auswirkung bei Fehlern.
+**Nachteil:** Komplexer zu implementieren (A/B-Traffic-Routing).
+
+## Rolling Update (Kubernetes Standard)
+Pods werden schrittweise ersetzt:
+```
+[v1][v1][v1] → [v2][v1][v1] → [v2][v2][v1] → [v2][v2][v2]
+```
+
+**Merke:** Blue-Green = schneller Rollback; Canary = schrittweiser Rollout mit Monitoring$C$,
+   '["DevOps","Deployment","Blue-Green","Canary","Rolling Update"]', 'Deployment'),
+
+  (v_devops, v_uid, 'Feature Flags',
+$C$**Feature Flags** (auch Feature Toggles) entkoppeln **Deployment** von **Release**.
+
+## Das Konzept
+
+Code deployen ohne Features zu aktivieren → Feature erst für bestimmte Nutzer/Umgebungen einschalten:
+
+```javascript
+if (featureFlag.isEnabled('neue-suche', userId)) {
+  return <NeuesSuchfeld />;
+} else {
+  return <AltesSuchfeld />;
+}
+```
+
+## Anwendungsfälle
+
+| Einsatz | Beschreibung |
+|---------|-------------|
+| **Trunk-Based Dev** | Unfertiger Code schon gemergt, aber deaktiviert |
+| **A/B Testing** | Feature für 50% der Nutzer → Konversionen messen |
+| **Canary Release** | Feature für 1% → 10% → 100% |
+| **Kill Switch** | Problematisches Feature sofort deaktivieren |
+| **Beta-Nutzer** | Feature nur für ausgewählte Nutzer |
+
+## Tools für Feature Flags
+- **LaunchDarkly** (kommerziell, sehr mächtig)
+- **Azure App Configuration** (Feature Manager)
+- **Unleash** (Open Source)
+- **Selbst gebaut** (einfache Datenbank-Tabelle)
+
+## Azure App Configuration
+```csharp
+if (await featureManager.IsEnabledAsync("NeueKI"))
+{
+    // neue KI-Funktion
+}
+```
+
+```json
+// Azure Portal
+{
+  "id": "NeueKI",
+  "enabled": true,
+  "conditions": {
+    "clientFilters": [{ "name": "Percentage", "parameters": { "Value": 10 } }]
+  }
+}
+```
+
+**Merke:** Feature Flags = deploye früh, release kontrolliert$C$,
+   '["DevOps","Feature Flags","Deployment","A/B Testing","Trunk-Based"]', 'Deployment'),
+
+  (v_devops, v_uid, 'GitOps & ArgoCD',
+$C$**GitOps** ist ein Betriebsmodell bei dem Git die einzige Wahrheitsquelle für Infrastruktur und Anwendungen ist.
+
+## GitOps-Prinzipien
+
+1. **Deklarativ:** System-Zustand ist in Git-Dateien beschrieben
+2. **Versioniert:** Vollständige Audit-History in Git
+3. **Automatisch:** Ein Agent synchronisiert Git-Zustand mit dem Live-System
+4. **Selbstheilend:** Wenn jemand manuell etwas ändert, wird es automatisch zurückgesetzt
+
+## Push vs. Pull
+
+**Push (klassisches CD):**
+```
+CI/CD Pipeline → kubectl apply → Cluster
+```
+
+**Pull (GitOps):**
+```
+Git (Wahrheit) ← ArgoCD (Pull) → Cluster (Anpassung)
+```
+ArgoCD überwacht Git und Cluster — wenn sie abweichen, synchronisiert ArgoCD.
+
+## ArgoCD
+
+ArgoCD läuft im Kubernetes-Cluster und synchronisiert Git → Cluster:
+
+```yaml
+# ArgoCD Application
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: meine-app
+spec:
+  source:
+    repoURL: https://github.com/mein-org/k8s-configs
+    path: production/meine-app
+    targetRevision: main
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: produktion
+  syncPolicy:
+    automated:
+      prune: true      # Nicht in Git = wird gelöscht
+      selfHeal: true   # Manuelle Änderungen werden rückgängig gemacht
+```
+
+## Workflow
+```
+PR erstellen → Review → Merge in main → ArgoCD synct → Cluster aktuell
+```
+
+**Merke:** GitOps = Git ist das Steuer, nicht kubectl oder Azure Portal$C$,
+   '["DevOps","GitOps","ArgoCD","Kubernetes","CD"]', 'GitOps'),
+
+  (v_devops, v_uid, 'Site Reliability Engineering (SRE)',
+$C$**SRE (Site Reliability Engineering)** ist Googles Ansatz, Software-Engineering-Prinzipien auf Operations anzuwenden.
+
+## "SRE ist, was passiert wenn man Software-Ingenieure damit beauftragt, Operations-Arbeit zu erledigen."
+— Ben Treynor Sloss, Google
+
+## SRE-Kernprinzipien
+
+**Error Budget:** $1 - \text{SLO}$ = erlaubtes Risiko
+- Budget vorhanden → neue Features deployen OK
+- Budget aufgebraucht → nur Stabilität, keine Features
+
+**Toil (Plackerei) reduzieren:**
+Toil = manuelle, repetitive Arbeit ohne dauerhaften Wert.
+SREs streben an: max. 50% Zeit für Toil, min. 50% für Engineering.
+
+**Automation first:** Wenn du etwas zweimal manuell machst, automatisiere es beim dritten Mal.
+
+**Postmortems ohne Schuld:**
+Nach Incidents: Was lief schief? → Systeme verbessern, nicht Schuldige suchen.
+
+## SRE vs. DevOps
+| | SRE | DevOps |
+|--|-----|--------|
+| Ursprung | Google | Gemeinschaft |
+| Fokus | Reliability | Kultur + Prozess |
+| Messung | SLI/SLO/Error Budget | DORA Metriken |
+| Ansatz | Engineering für Ops | Dev+Ops vereinen |
+
+SRE ist eine **konkrete Implementierung** von DevOps-Prinzipien.
+
+## Incident Management
+1. **Detect:** Alert schlägt an
+2. **Respond:** On-Call-Person übernimmt
+3. **Mitigate:** Sofortmaßnahme (Rollback, Feature Flag)
+4. **Resolve:** Root Cause beheben
+5. **Postmortem:** Lernmaterial, Verbesserungen
+
+**Merke:** SRE = Software-Engineering für Reliability; Error Budget = Lizenz zum Deployen$C$,
+   '["DevOps","SRE","Reliability","SLO","Error Budget"]', 'SRE'),
+
+  (v_devops, v_uid, 'Container-Sicherheit in der CI/CD-Pipeline',
+$C$**Container-Sicherheit** muss in jeder Phase der Pipeline berücksichtigt werden — "Shift Left Security".
+
+## Shift Left
+
+Sicherheits-Checks so früh wie möglich in die Pipeline:
+```
+Code → SAST → Build → Image-Scan → Deploy → Runtime-Schutz
+```
+
+## SAST (Static Application Security Testing)
+Code wird analysiert ohne Ausführung:
+```yaml
+# GitHub Actions: CodeQL
+- uses: github/codeql-action/analyze@v3
+  with:
+    languages: ['javascript', 'python']
+```
+
+## Dependency-Scanning
+Bekannte CVEs in Abhängigkeiten finden:
+```bash
+npm audit                # Node.js
+pip-audit                # Python
+trivy fs .               # Alle Sprachen
+```
+
+## Container-Image-Scanning
+```bash
+# Trivy: nach CVEs suchen
+trivy image meine-app:latest
+
+# Docker Scout (in Docker integriert)
+docker scout cves meine-app:latest
+
+# In CI/CD Pipeline:
+trivy image --severity CRITICAL,HIGH --exit-code 1 meine-app:latest
+# exit-code 1 = Pipeline schlägt fehl bei Findings
+```
+
+## Secrets-Scanning
+Verhindert dass Passwörter ins Repo kommen:
+```bash
+# GitLeaks
+gitleaks detect --source . --verbose
+
+# In GitHub: Secret Scanning aktivieren
+# (automatisch für öffentliche Repos)
+```
+
+## Supply Chain Security
+- **SBOM (Software Bill of Materials):** Inventar aller Dependencies
+- **Image Signing:** Cosign signiert Images kryptographisch
+- **Trusted Base Images:** Nur offizielle, gepatchte Base-Images
+
+**Merke:** Security in die Pipeline einbauen, nicht hintendran kleben$C$,
+   '["DevOps","Security","CI/CD","Container","SAST"]', 'Sicherheit');
 
   RAISE NOTICE 'Seed erfolgreich! Bereiche, Boxen und Karten für % erstellt.', v_uid;
 END;
