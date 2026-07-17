@@ -13,6 +13,14 @@ DECLARE
   v_docker       integer;
   v_scrum        integer;
   v_devops       integer;
+  v_re           integer;
+  v_sql_box      integer;
+  v_bi_box       integer;
+  v_business     integer;
+  v_bprozesse    integer;
+  v_ba_box       integer;
+  v_strategy     integer;
+  v_pm_classic   integer;
 BEGIN
   SELECT id INTO v_uid FROM auth.users WHERE email = 'steven.illg.it@outlook.com';
   IF v_uid IS NULL THEN RAISE EXCEPTION 'Nutzer nicht gefunden'; END IF;
@@ -35,6 +43,24 @@ BEGIN
     VALUES ('Docker', '🐳', '#0db7ed', v_informatik, v_uid, 4) RETURNING id INTO v_docker;
   INSERT INTO boxes (name, icon, color, parent_id, user_id, sort_order)
     VALUES ('DevOps', '🔄', '#f97316', v_informatik, v_uid, 5) RETURNING id INTO v_devops;
+  INSERT INTO boxes (name, icon, color, parent_id, user_id, sort_order)
+    VALUES ('Requirements Engineering', '📋', '#ec4899', v_informatik, v_uid, 6) RETURNING id INTO v_re;
+  INSERT INTO boxes (name, icon, color, parent_id, user_id, sort_order)
+    VALUES ('SQL', '🗄️', '#6366f1', v_informatik, v_uid, 7) RETURNING id INTO v_sql_box;
+  INSERT INTO boxes (name, icon, color, parent_id, user_id, sort_order)
+    VALUES ('Business Intelligence', '📊', '#f59e0b', v_informatik, v_uid, 8) RETURNING id INTO v_bi_box;
+
+  -- ── Business & Consulting Bereich ────────────────────────────
+  INSERT INTO boxes (name, icon, color, parent_id, user_id, sort_order)
+    VALUES ('Business & Consulting', '💼', '#0ea5e9', NULL, v_uid, 12) RETURNING id INTO v_business;
+  INSERT INTO boxes (name, icon, color, parent_id, user_id, sort_order)
+    VALUES ('Geschäftsprozesse', '🔄', '#8b5cf6', v_business, v_uid, 1) RETURNING id INTO v_bprozesse;
+  INSERT INTO boxes (name, icon, color, parent_id, user_id, sort_order)
+    VALUES ('Business Analyse', '📈', '#22c55e', v_business, v_uid, 2) RETURNING id INTO v_ba_box;
+  INSERT INTO boxes (name, icon, color, parent_id, user_id, sort_order)
+    VALUES ('Strategisches Management', '🎯', '#ef4444', v_business, v_uid, 3) RETURNING id INTO v_strategy;
+  INSERT INTO boxes (name, icon, color, parent_id, user_id, sort_order)
+    VALUES ('Projektmanagement', '📋', '#06b6d4', v_business, v_uid, 4) RETURNING id INTO v_pm_classic;
 
   -- ════════════════════════════════════════════════════════════════
   -- IT MATHE
@@ -4337,6 +4363,2554 @@ gitleaks detect --source . --verbose
 
 **Merke:** Security in die Pipeline einbauen, nicht hintendran kleben$C$,
    '["DevOps","Security","CI/CD","Container","SAST"]', 'Sicherheit');
+
+  -- ════════════════════════════════════════════════════════════════
+  -- REQUIREMENTS ENGINEERING
+  -- ════════════════════════════════════════════════════════════════
+
+  INSERT INTO cards (box_id, user_id, title, content, tags, category) VALUES
+  (v_re, v_uid, 'Was ist Requirements Engineering?',
+$C$**Requirements Engineering (RE)** ist der systematische Prozess, Anforderungen an ein System zu ermitteln, zu dokumentieren, zu prüfen und zu verwalten.
+
+## Ziel
+Sicherstellen, dass das richtige System gebaut wird — nicht nur, dass das System richtig gebaut wird.
+
+## RE im Projektlebenszyklus
+```
+Idee → Anforderungen erheben → dokumentieren → prüfen → verwalten → System bauen
+```
+
+## Warum RE so wichtig ist
+- 60-70% aller Projektfehler haben ihren Ursprung in unklaren Anforderungen
+- Fehler in der RE-Phase zu beheben kostet 1x
+- Denselben Fehler in der Testphase zu beheben kostet 10x
+- In der Produktion: 100x
+
+## RE-Teilprozesse
+| Prozess | Tätigkeit |
+|---------|-----------|
+| **Ermittlung** | Stakeholder befragen, Workshops, Beobachtung |
+| **Analyse** | Widersprüche finden, Lücken schließen |
+| **Spezifikation** | Dokumentieren (Lastenheft, User Stories) |
+| **Validierung** | Anforderungen prüfen lassen |
+| **Management** | Änderungen verwalten, Traceability |
+
+## Anforderungsquellen
+- Stakeholder (Auftraggeber, Nutzer, Gesetzgeber)
+- Bestehende Dokumente, Legacy-Systeme
+- Marktanalysen, Konkurrenzprodukte
+- Gesetze, Normen, Standards
+
+**Merke:** RE = richtige Anforderungen finden, BEVOR gebaut wird$C$,
+   '["RE","Anforderungen","Grundlagen","Prozess","Qualität"]', 'Grundlagen'),
+
+  (v_re, v_uid, 'Funktionale vs. Nicht-funktionale Anforderungen',
+$C$Anforderungen teilen sich in zwei Hauptkategorien.
+
+## Funktionale Anforderungen (FA)
+Was das System **tun** soll — Funktionen, Verhalten, Features:
+- "Das System muss dem Nutzer ermöglichen, sich per E-Mail zu registrieren."
+- "Das System berechnet die monatliche Summe aller Buchungen."
+- "Der Admin kann Nutzerkonten sperren."
+
+**Format:** "Das System muss/soll [Funktion] [unter welchen Bedingungen]."
+
+## Nicht-funktionale Anforderungen (NFA)
+Wie gut das System etwas tun soll — Qualitätseigenschaften:
+
+| Kategorie | Beispiel |
+|-----------|---------|
+| **Performance** | Antwortzeit < 2 Sekunden bei 1000 gleichzeitigen Nutzern |
+| **Verfügbarkeit** | 99,9% Uptime (max. 8,7h Ausfall/Jahr) |
+| **Sicherheit** | Passwörter müssen gehasht gespeichert werden (bcrypt) |
+| **Skalierbarkeit** | System muss auf 10.000 Nutzer erweiterbar sein |
+| **Wartbarkeit** | Code-Coverage mindestens 80% |
+| **Usability** | Neue Nutzer können ohne Schulung innerhalb 5 Min eine Buchung anlegen |
+| **Kompatibilität** | Unterstützt Chrome, Firefox, Safari (neueste 2 Versionen) |
+
+## ISO 25010 Qualitätsmodell
+Standard für Software-Qualitätseigenschaften:
+Funktionalität, Effizienz, Kompatibilität, Usability, Zuverlässigkeit, Sicherheit, Wartbarkeit, Portabilität.
+
+**Merke:** FA = WAS das System tut; NFA = WIE GUT es das tut$C$,
+   '["RE","Anforderungen","Funktional","Nicht-funktional","Qualität"]', 'Grundlagen'),
+
+  (v_re, v_uid, 'Lastenheft vs. Pflichtenheft',
+$C$Zwei zentrale Dokumente im deutschen Anforderungsmanagement.
+
+## Lastenheft (vom Auftraggeber)
+Beschreibt **was** der Auftraggeber will — aus seiner Sicht:
+- Wer schreibt es? **Auftraggeber (AG)**
+- Inhalt: Ziele, Rahmenbedingungen, grobe Anforderungen
+- Sprache: Fachbereichs-Sprache, kein technisches Detail
+- Zeitpunkt: Vor Ausschreibung / Vergabe
+
+Typischer Aufbau:
+1. Ausgangssituation und Zielsetzung
+2. Produkt- und Leistungsumfang
+3. Technische Anforderungen (grob)
+4. Qualitätsanforderungen
+5. Lieferumfang und Termine
+
+## Pflichtenheft (vom Auftragnehmer)
+Beschreibt **wie** der Auftragnehmer das umsetzt:
+- Wer schreibt es? **Auftragnehmer (AN)**
+- Inhalt: Technische Umsetzung, konkrete Spezifikation
+- Sprache: Technisch präzise
+- Zeitpunkt: Nach Auftragsvergabe
+
+Typischer Aufbau:
+1. Beschreibung der Ausgangssituation
+2. Systembeschreibung
+3. Technische Realisierung
+4. Schnittstellen
+5. Test- und Abnahmekriterien
+
+## Merksatz
+> Lastenheft: AG sagt WAS. Pflichtenheft: AN sagt WIE.
+
+**Merke:** Lastenheft = Anforderungen des Kunden. Pflichtenheft = Antwort des Dienstleisters.$C$,
+   '["RE","Lastenheft","Pflichtenheft","Dokument","Auftraggeber"]', 'Dokumentation'),
+
+  (v_re, v_uid, 'Anforderungsermittlung — Techniken',
+$C$Methoden um Anforderungen von Stakeholdern zu erheben.
+
+## Interview
+Strukturiertes Gespräch mit einem Stakeholder:
+- **Offen:** "Wie arbeiten Sie heute mit dem System?"
+- **Geschlossen:** "Brauchen Sie eine Export-Funktion?"
+- **Sondierendes Nachfragen:** "Warum ist das für Sie wichtig?"
+
+Vorteil: tiefes Verständnis. Nachteil: zeitaufwändig.
+
+## Workshop / Joint Application Design (JAD)
+Mehrere Stakeholder gleichzeitig — Moderator führt durch:
+- Schnelleres Konsensfinden
+- Widersprüche sofort sichtbar
+- Ergebnis: gemeinsam verabschiedete Anforderungen
+
+## Beobachtung / Feldbeobachtung (Shadowing)
+Analyst begleitet Nutzer bei der Arbeit und beobachtet:
+- Deckt implizites Wissen auf ("tacit knowledge")
+- Nutzer können nicht alles in Worte fassen — sehen hilft
+
+## Fragebogen / Survey
+Strukturierte schriftliche Befragung vieler Stakeholder:
+- Gut bei verteilten Gruppen
+- Quantitative Auswertung möglich
+- Oberflächlicher als Interviews
+
+## Prototyping
+Frühes Modell des Systems um Anforderungen zu explorieren:
+- **Wegwerf-Prototyp:** Nur zum Ausprobieren, danach verwerfen
+- **Evolutionärer Prototyp:** Weiterentwicklung zum fertigen System
+
+## Dokumentenanalyse
+Bestehende Prozessbeschreibungen, Handbücher, Formulare analysieren.
+
+**Merke:** Kombination verschiedener Methoden liefert das vollständigste Bild$C$,
+   '["RE","Ermittlung","Interview","Workshop","Prototyping"]', 'Ermittlung'),
+
+  (v_re, v_uid, 'Stakeholder-Analyse',
+$C$**Stakeholder** sind alle Personen und Gruppen, die ein Interesse am System haben oder davon betroffen sind.
+
+## Stakeholder-Kategorien
+- **Primäre Stakeholder:** Direkte Nutzer des Systems
+- **Sekundäre Stakeholder:** Indirekt betroffen (Management, Betrieb)
+- **Tertiäre Stakeholder:** Gesellschaft, Regulatoren, Konkurrenz
+
+## Stakeholder identifizieren — Fragen stellen
+- Wer nutzt das System direkt?
+- Wer liefert Daten / empfängt Ergebnisse?
+- Wer finanziert / genehmigt das Projekt?
+- Welche Gesetze und Normen gelten?
+- Wer profitiert / leidet wenn das System läuft?
+
+## Power/Interest-Matrix
+```
+        hoch |  Managen   | Eng einbinden |
+  Einfluss   |            |               |
+        gering| Beobachten | Informieren  |
+              +-----------+---------------+
+              gering      hoch
+                    Interesse
+```
+
+## Stakeholder-Register
+Tabelle mit: Name, Rolle, Interesse, Einfluss, Erwartungen, Kommunikationsform
+
+## Umgang mit Konflikten
+Wenn Stakeholder widersprüchliche Anforderungen haben:
+1. Konflikt dokumentieren
+2. Gemeinsamen Workshop
+3. Priorisierung (MoSCoW)
+4. Eskalation an Entscheider
+
+**Merke:** Stakeholder frühzeitig identifizieren und einbinden — fehlende Stakeholder = vergessene Anforderungen$C$,
+   '["RE","Stakeholder","Analyse","Konflikt","Power-Interest"]', 'Ermittlung'),
+
+  (v_re, v_uid, 'Use Cases & Use Case Diagramm',
+$C$**Use Cases (Anwendungsfälle)** beschreiben die Interaktion zwischen Akteuren und dem System.
+
+## Use Case Diagramm (UML)
+Zeigt, WER (Akteur) WAS (Use Case) mit dem System macht:
+```
+[Kunde] ──── (Produkt suchen)
+[Kunde] ──── (Bestellen)
+[Kunde] ──── (Zahlen) ──<include>── (Adresse eingeben)
+[Admin] ──── (Bestellungen verwalten)
+[Admin] ──── (Nutzer sperren)
+```
+
+**Systemgrenze:** Rechteck um alle Use Cases — zeigt was zum System gehört.
+
+**Akteur:** Strichmännchen außerhalb der Systemgrenze — muss nicht menschlich sein (auch externe Systeme).
+
+## Beziehungen im UC-Diagramm
+| Beziehung | Symbol | Bedeutung |
+|-----------|--------|-----------|
+| Association | `────` | Akteur nutzt Use Case |
+| Include | `<<include>>` | UC wird immer eingeschlossen |
+| Extend | `<<extend>>` | UC wird optional eingeschlossen |
+| Generalization | `──▷` | Spezialisierung |
+
+## Use Case Beschreibung (Schablone)
+```
+Name: Produkt bestellen
+Akteur: Registrierter Kunde
+Vorbedingung: Kunde ist eingeloggt, Warenkorb nicht leer
+Normalablauf:
+  1. Kunde wählt "Zur Kasse"
+  2. System zeigt Bestellübersicht
+  3. Kunde bestätigt
+  4. System speichert Bestellung
+  5. System sendet Bestätigung per E-Mail
+Nachbedingung: Bestellung ist gespeichert
+Alternativablauf: Zahlung schlägt fehl → Kunde wählt andere Zahlmethode
+```
+
+**Merke:** UC-Diagramm = Überblick; UC-Beschreibung = Details des Ablaufs$C$,
+   '["RE","Use Case","UML","Diagramm","Akteur"]', 'Modellierung'),
+
+  (v_re, v_uid, 'Priorisierung: MoSCoW & Kano',
+$C$Anforderungen müssen priorisiert werden — nicht alles ist gleich wichtig.
+
+## MoSCoW-Methode
+
+| Buchstabe | Bedeutung | Beschreibung |
+|-----------|-----------|-------------|
+| **M**ust Have | Muss | Ohne diese Anforderung ist das System nicht einsetzbar |
+| **S**hould Have | Sollte | Wichtig, aber kein K.O.-Kriterium |
+| **C**ould Have | Kann | Nett zu haben, wenn Zeit/Budget reicht |
+| **W**on't Have | Wird nicht | Bewusst ausgeschlossen (jetzt) |
+
+**Typische Verteilung:** Must ~60%, Should ~20%, Could ~20%
+
+## Kano-Modell
+
+Zeigt wie Anforderungen Kundenzufriedenheit beeinflussen:
+
+**Basisfaktoren (Muss-Qualität):**
+Werden gar nicht bemerkt wenn vorhanden — fehlen sie, ist der Kunde sehr unzufrieden.
+*Beispiel: Login funktioniert*
+
+**Leistungsfaktoren (Soll-Qualität):**
+Mehr davon = mehr Zufriedenheit (linear).
+*Beispiel: Schnellere Ladezeiten*
+
+**Begeisterungsfaktoren (Kann-Qualität):**
+Werden nicht erwartet — überraschen positiv.
+*Beispiel: Personalisierte Empfehlungen*
+
+**Unerhebliche Faktoren:**
+Egal ob vorhanden oder nicht.
+
+**Ablehnungsfaktoren:**
+Schaden immer (sollten nicht gebaut werden).
+
+## Wann welche Methode?
+- **MoSCoW:** Schnelle Priorisierung im Sprint Planning
+- **Kano:** Strategische Produkt-Entscheidungen
+
+**Merke:** MoSCoW = Muss/Soll/Kann/Nie. Kano = Zufriedenheitswirkung von Anforderungen$C$,
+   '["RE","MoSCoW","Kano","Priorisierung","Anforderungen"]', 'Priorisierung'),
+
+  (v_re, v_uid, 'Anforderungen dokumentieren — SMART & IEEE 830',
+$C$Gute Anforderungen zu schreiben ist eine Kunst.
+
+## SMART-Kriterien für Anforderungen
+| Buchstabe | Bedeutung | Schlechtes Beispiel | Gutes Beispiel |
+|-----------|-----------|--------------------|----|
+| **S**pezifisch | Eindeutig | "System soll schnell sein" | "Seitenaufbau < 2s" |
+| **M**essbar | Prüfbar | "gute Usability" | "SUS-Score > 80" |
+| **A**bgestimmt | Akzeptiert | ohne Stakeholder | mit Stakeholder vereinbart |
+| **R**ealistisch | Erreichbar | "100% Uptime" | "99,9% Uptime" |
+| **T**erminiert | Wann | "irgendwann" | "Release v2.0, Q3 2025" |
+
+## Sprachliche Qualität
+```
+SOLL (Pflicht): "Das System MUSS..."
+SOLLTE (Empfehlung): "Das System SOLL..."
+KANN (Optional): "Das System KANN..."
+```
+
+**Anti-Patterns — vermeiden:**
+- Vage Begriffe: "benutzerfreundlich", "schnell", "einfach"
+- Mehrfachanforderungen: "... und ... und ..."
+- Negativformulierungen: "Das System darf nicht..."
+- Implementierungsvorgaben: "Das System nutzt MySQL" (= Design-Entscheidung, keine Anforderung)
+
+## IEEE 830 (SRS-Standard)
+Software Requirements Specification-Dokument:
+1. Einleitung (Zweck, Umfang, Definitionen)
+2. Gesamtbeschreibung (Produktübersicht, Nutzermerkmale)
+3. Spezifische Anforderungen (FA, NFA, Constraints)
+
+**Merke:** Jede Anforderung muss: eindeutig, vollständig, konsistent, prüfbar, verfolgbar sein$C$,
+   '["RE","SMART","IEEE 830","Dokumentation","Qualität"]', 'Dokumentation'),
+
+  (v_re, v_uid, 'Traceability & Änderungsmanagement',
+$C$**Traceability** (Rückverfolgbarkeit) verknüpft Anforderungen mit Test-Cases, Code und anderen Artefakten.
+
+## Traceability Matrix (RTM)
+Tabelle die zeigt: welche Anforderung durch welchen Test abgedeckt ist.
+
+| Anforderung | Test Case | Status |
+|-------------|-----------|--------|
+| FA-001: Login | TC-001, TC-002 | Getestet |
+| FA-002: Warenkorb | TC-003 | Offen |
+| NFA-001: Performance | TC-010 | Teilweise |
+
+**Vorwärts-Traceability:** Anforderung → Design → Code → Test
+**Rückwärts-Traceability:** Test → Code → Design → Anforderung
+
+## Warum Traceability wichtig ist
+- Vollständigkeit prüfen: Jede Anforderung hat mindestens einen Test
+- Auswirkungsanalyse: Was ändert sich wenn Anforderung X geändert wird?
+- Compliance-Nachweis (regulierte Branchen)
+
+## Änderungsmanagement (Change Management)
+Prozess wenn Anforderungen sich ändern:
+
+1. **Änderungsantrag (Change Request, CR):** Beschreibung, Begründung, Priorität
+2. **Impact-Analyse:** Was wird sich ändern? (Code, Tests, Zeitplan)
+3. **Genehmigung:** Change Control Board (CCB) entscheidet
+4. **Umsetzung:** Anforderung, Design, Code, Tests anpassen
+5. **Verifikation:** Änderung korrekt umgesetzt?
+
+**Configuration Management:** Versionierung von Anforderungsdokumenten.
+
+**Merke:** Traceability = Anforderungen bis in den Test verfolgen; CR-Prozess = kontrollierte Änderungen$C$,
+   '["RE","Traceability","RTM","Change Management","Änderungsmanagement"]', 'Management'),
+
+  (v_re, v_uid, 'Validierung vs. Verifikation',
+$C$Zwei fundamentale Qualitätssicherungskonzepte in der Softwareentwicklung.
+
+## Verifikation — "Bauen wir das System richtig?"
+Prüft ob das Produkt die **Spezifikation** erfüllt:
+- Technischer Check: Entspricht das Gebaut dem Geplanten?
+- Reviews, Inspektionen, statische Analyse, Unit Tests
+- Frage: "Haben wir das Pflichtenheft umgesetzt?"
+
+## Validierung — "Bauen wir das richtige System?"
+Prüft ob das Produkt die **Kundenbedürfnisse** erfüllt:
+- Check mit echten Nutzern / Stakeholdern
+- User Acceptance Testing (UAT), Demos, Pilotbetrieb
+- Frage: "Löst das System das eigentliche Problem des Kunden?"
+
+## Eselsbrücke
+**V**erifikation = **V**orschriften (Spec). **V**alidierung = **V**erwendung (Nutzer).
+
+| | Verifikation | Validierung |
+|--|-------------|------------|
+| Frage | Richtig gebaut? | Richtiges gebaut? |
+| Basis | Spezifikation | Kundenbedürfnis |
+| Methode | Reviews, Unit Tests | UAT, Demos |
+| Zeitpunkt | Während Entwicklung | Am Ende / iterativ |
+| Wer prüft | Entwickler, QS | Kunde, Nutzer |
+
+## V-Modell (Verbindung)
+```
+Anforderungen ─────────────────── Abnahmetest
+  Systemdesign ─────────────── Systemtest
+    Komponentendesign ─────── Integrationstest
+      Implementierung ──── Unit Test
+```
+Links: Entwicklung (Spezifikation). Rechts: Tests (Verifikation + Validierung).
+
+**Merke:** Verifikation = intern prüfen. Validierung = Kunde bestätigt.$C$,
+   '["RE","Validierung","Verifikation","V-Modell","Qualitätssicherung"]', 'Qualität'),
+
+  (v_re, v_uid, 'UML — Klassendiagramm Grundlagen',
+$C$Das **Klassendiagramm** ist das häufigste UML-Diagramm — zeigt Klassen, Attribute, Methoden und ihre Beziehungen.
+
+## Klasse
+```
+┌─────────────────────┐
+│      Kunde          │  ← Klassenname
+├─────────────────────┤
+│ - id: int           │  ← Attribute (- = private, + = public)
+│ - name: String      │
+│ - email: String     │
+├─────────────────────┤
+│ + anmelden(): void  │  ← Methoden
+│ + bestellen(): Order│
+└─────────────────────┘
+```
+
+## Beziehungen
+| Beziehung | Symbol | Bedeutung |
+|-----------|--------|-----------|
+| **Association** | `────` | A nutzt B |
+| **Aggregation** | `◇────` | "hat ein" (Teil kann ohne Ganzes existieren) |
+| **Komposition** | `◆────` | "besteht aus" (Teil stirbt mit Ganzem) |
+| **Vererbung** | `──▷` | "ist ein" (extends) |
+| **Realisierung** | `---▷` | implementiert Interface |
+| **Abhängigkeit** | `--->` | nutzt temporär |
+
+## Multiplizitäten
+```
+Kunde ──1────*── Bestellung
+```
+- `1` = genau einer
+- `*` = beliebig viele
+- `0..1` = keiner oder einer
+- `1..*` = einer oder mehr
+
+## Beispiel: Onlineshop
+```
+Kunde 1 ──── * Bestellung
+Bestellung 1 ──── * Position
+Position * ──── 1 Produkt
+Produkt * ──── 1 Kategorie
+```
+
+**Merke:** Klassendiagramm = Struktur des Systems; Beziehungstypen auswendig lernen!$C$,
+   '["RE","UML","Klassendiagramm","Modellierung","OOP"]', 'Modellierung'),
+
+  (v_re, v_uid, 'Systemkontext & Kontextdiagramm',
+$C$Der **Systemkontext** zeigt, was zum System gehört und was außerhalb liegt (externe Systeme, Akteure).
+
+## Zweck
+- Systemgrenze klar definieren
+- Externe Schnittstellen identifizieren
+- Scope festlegen: Was liegt IN, was AUSSERHALB der Verantwortung?
+
+## Kontextdiagramm
+```
+[ERP-System] ──Bestelldaten──► [Bestellsystem] ──Rechnung──► [Buchhaltung]
+[Kunde]      ──Anfrage──────► [Bestellsystem] ──Status───► [Kunde]
+                              [Bestellsystem] ──Versand──► [Logistik-API]
+```
+
+**Systemgrenze:** Alles im Rechteck = unser System.
+**Externe Entitäten:** Außerhalb (ERP, Buchhaltung, Logistik, Kunde).
+**Datenflüsse:** Pfeile mit beschrifteten Daten.
+
+## Systemkontext vs. Kontextdiagramm
+- **Systemkontext:** textuelle Beschreibung aller relevanten Umgebungsaspekte
+- **Kontextdiagramm:** grafische Darstellung
+
+## Was gehört in den Kontext?
+- Nachbarsysteme (Schnittstellen)
+- Nutzergruppen (Akteure)
+- Regulatorische Rahmenbedingungen
+- Technische Einschränkungen (Browser, OS)
+- Organisatorische Rahmenbedingungen
+
+## Kontext-Abgrenzung
+"Das System X ist verantwortlich für... Das System übernimmt NICHT..."
+
+**Merke:** Systemgrenze = was wir bauen; alles andere = Kontext (Schnittstelle definieren, nicht bauen)$C$,
+   '["RE","Systemkontext","Kontextdiagramm","Systemgrenze","Schnittstellen"]', 'Modellierung'),
+
+  (v_re, v_uid, 'IREB & CPRE — RE-Zertifizierung',
+$C$Das **IREB** (International Requirements Engineering Board) ist die führende RE-Zertifizierungsorganisation.
+
+## CPRE — Certified Professional for Requirements Engineering
+
+**Foundation Level (FL):**
+- Einstieg in RE
+- Themen: Grundlagen, Ermittlung, Dokumentation, Prüfung, Management
+- Prüfung: 45 Multiple-Choice-Fragen, 75 Minuten
+- Voraussetzung: keine
+
+**Advanced Level (AL):**
+Spezialisierungen:
+- RE Elicitation & Consolidation
+- RE Modelling
+- RE Management
+- Agile RE
+
+**Expert Level:**
+Für erfahrene RE-Praktiker.
+
+## IREB Glossar (wichtige Begriffe)
+| Begriff | Definition |
+|---------|-----------|
+| **Anforderung** | Bedingung oder Eigenschaft die ein System erfüllen muss |
+| **Stakeholder** | Person/Gruppe mit Interesse am System |
+| **Systemgrenze** | Trennung zwischen System und Systemkontext |
+| **Lastenheft** | Anforderungen des Auftraggebers |
+| **Pflichtenheft** | Realisierungsvorgaben des Auftragnehmers |
+| **Abnahmetest** | Validierung durch den Auftraggeber |
+
+## Syllabus-Themen (Foundation Level)
+1. Grundlagen des RE
+2. Systemkontext und Anforderungen
+3. Anforderungsermittlung
+4. Anforderungsdokumentation
+5. Anforderungsprüfung und -abstimmung
+6. Anforderungsmanagement
+
+**Merke:** IREB/CPRE-FL = Basisqualifikation für RE in Deutschland/DACH-Raum$C$,
+   '["RE","IREB","CPRE","Zertifizierung","Karriere"]', 'Karriere');
+
+  -- ════════════════════════════════════════════════════════════════
+  -- SQL
+  -- ════════════════════════════════════════════════════════════════
+
+  INSERT INTO cards (box_id, user_id, title, content, tags, category) VALUES
+  (v_sql_box, v_uid, 'SQL Grundlagen — SELECT, FROM, WHERE',
+$C$**SQL (Structured Query Language)** ist die Sprache für relationale Datenbanken.
+
+## Grundstruktur einer Abfrage
+```sql
+SELECT spalte1, spalte2     -- WAS soll ausgegeben werden?
+FROM tabelle                -- WOHER kommen die Daten?
+WHERE bedingung             -- WELCHE Zeilen? (Filter)
+ORDER BY spalte [ASC|DESC]  -- REIHENFOLGE?
+LIMIT 10;                   -- Maximal 10 Zeilen
+```
+
+## SELECT Beispiele
+```sql
+-- Alle Spalten
+SELECT * FROM kunden;
+
+-- Bestimmte Spalten
+SELECT vorname, nachname, email FROM kunden;
+
+-- Mit Alias
+SELECT vorname AS "Vorname", nachname AS "Nachname" FROM kunden;
+
+-- Berechnungen
+SELECT preis, preis * 1.19 AS brutto FROM produkte;
+
+-- Duplikate entfernen
+SELECT DISTINCT land FROM kunden;
+```
+
+## WHERE Filter
+```sql
+-- Vergleich
+WHERE alter >= 18
+WHERE status = 'aktiv'
+WHERE name != 'Max'
+
+-- Mehrere Bedingungen
+WHERE land = 'DE' AND alter >= 18
+WHERE land = 'DE' OR land = 'AT'
+WHERE NOT status = 'gesperrt'
+
+-- Bereich
+WHERE preis BETWEEN 10 AND 50
+
+-- Liste
+WHERE land IN ('DE', 'AT', 'CH')
+
+-- Pattern-Matching (% = beliebig viele Zeichen)
+WHERE name LIKE 'Max%'        -- beginnt mit Max
+WHERE email LIKE '%@gmail.com' -- endet mit @gmail.com
+WHERE name LIKE '%schmidt%'    -- enthält schmidt
+
+-- NULL prüfen (nie = NULL verwenden!)
+WHERE geloescht_am IS NULL
+WHERE geloescht_am IS NOT NULL
+```
+
+**Merke:** SQL-Reihenfolge: SELECT → FROM → WHERE → ORDER BY → LIMIT$C$,
+   '["SQL","SELECT","WHERE","Grundlagen","Abfrage"]', 'Grundlagen'),
+
+  (v_sql_box, v_uid, 'GROUP BY, HAVING & Aggregatfunktionen',
+$C$Aggregatfunktionen fassen mehrere Zeilen zu einem Wert zusammen.
+
+## Aggregatfunktionen
+```sql
+SELECT
+  COUNT(*)            AS anzahl,      -- alle Zeilen
+  COUNT(email)        AS mit_email,   -- ohne NULL
+  SUM(betrag)         AS summe,
+  AVG(betrag)         AS durchschnitt,
+  MIN(betrag)         AS minimum,
+  MAX(betrag)         AS maximum
+FROM bestellungen;
+```
+
+## GROUP BY — Gruppen bilden
+```sql
+-- Umsatz pro Land
+SELECT land, SUM(betrag) AS umsatz, COUNT(*) AS bestellungen
+FROM bestellungen
+GROUP BY land
+ORDER BY umsatz DESC;
+```
+
+Ergebnis:
+```
+land | umsatz  | bestellungen
+DE   | 45230   | 892
+AT   | 12800   | 234
+CH   | 9100    | 178
+```
+
+## HAVING — Filter nach GROUP BY
+WHERE filtert VOR der Gruppierung, HAVING NACH:
+```sql
+-- Nur Länder mit mehr als 500 Bestellungen
+SELECT land, COUNT(*) AS anz, SUM(betrag) AS umsatz
+FROM bestellungen
+GROUP BY land
+HAVING COUNT(*) > 500
+ORDER BY umsatz DESC;
+```
+
+## Ausführungsreihenfolge (intern!)
+```
+FROM → WHERE → GROUP BY → HAVING → SELECT → ORDER BY → LIMIT
+```
+Wichtig: HAVING bezieht sich auf GROUP BY-Ergebnis, nicht auf Originaldaten.
+
+```sql
+-- Produkte deren Durchschnittspreis > 50 ist
+SELECT kategorie, AVG(preis) AS avg_preis
+FROM produkte
+WHERE aktiv = true
+GROUP BY kategorie
+HAVING AVG(preis) > 50
+ORDER BY avg_preis DESC;
+```
+
+**Merke:** GROUP BY = gruppieren; HAVING = nach-dem-Gruppieren filtern$C$,
+   '["SQL","GROUP BY","HAVING","Aggregat","COUNT","SUM"]', 'Abfragen'),
+
+  (v_sql_box, v_uid, 'JOINs — Tabellen verknüpfen',
+$C$**JOINs** verknüpfen Daten aus mehreren Tabellen.
+
+## INNER JOIN — nur passende Paare
+```sql
+SELECT k.name, b.betrag, b.datum
+FROM kunden k
+INNER JOIN bestellungen b ON k.id = b.kunden_id;
+-- Nur Kunden die mindestens eine Bestellung haben
+```
+
+## LEFT JOIN — alle der linken Tabelle
+```sql
+SELECT k.name, b.betrag
+FROM kunden k
+LEFT JOIN bestellungen b ON k.id = b.kunden_id;
+-- ALLE Kunden, auch ohne Bestellung (betrag = NULL)
+```
+
+## RIGHT JOIN — alle der rechten Tabelle
+Spiegel von LEFT JOIN (selten verwendet — lieber LEFT JOIN umdrehen).
+
+## FULL OUTER JOIN — alle aus beiden
+```sql
+SELECT k.name, b.betrag
+FROM kunden k
+FULL OUTER JOIN bestellungen b ON k.id = b.kunden_id;
+-- Alle Kunden + alle Bestellungen, auch ohne Gegenstück
+```
+
+## CROSS JOIN — kartesisches Produkt
+```sql
+SELECT * FROM farben CROSS JOIN groessen;
+-- Jede Farbe × jede Größe = alle Kombinationen
+```
+
+## Mehrere JOINs
+```sql
+SELECT k.name, b.datum, p.name AS produkt
+FROM kunden k
+JOIN bestellungen b ON k.id = b.kunden_id
+JOIN bestellpositionen bp ON b.id = bp.bestell_id
+JOIN produkte p ON bp.produkt_id = p.id
+WHERE b.datum >= '2024-01-01';
+```
+
+## JOIN Visualisierung
+```
+INNER: [A ∩ B]
+LEFT:  [A] + [A ∩ B]
+RIGHT: [A ∩ B] + [B]
+FULL:  [A] + [A ∩ B] + [B]
+```
+
+**Merke:** INNER = Schnittmenge; LEFT = alle links + Schnitt; ohne ON = CROSS (Vorsicht: riesig!))$C$,
+   '["SQL","JOIN","INNER JOIN","LEFT JOIN","Tabellen"]', 'Abfragen'),
+
+  (v_sql_box, v_uid, 'Subqueries & CTEs (WITH)',
+$C$**Subqueries** sind Abfragen innerhalb einer Abfrage. **CTEs** sind benannte, wiederverwendbare Subqueries.
+
+## Subquery in WHERE
+```sql
+-- Kunden die mehr als der Durchschnitt bestellt haben
+SELECT name, gesamtbetrag
+FROM kunden
+WHERE gesamtbetrag > (
+  SELECT AVG(gesamtbetrag) FROM kunden
+);
+```
+
+## Subquery in FROM (Derived Table)
+```sql
+SELECT land, avg_betrag
+FROM (
+  SELECT land, AVG(betrag) AS avg_betrag
+  FROM bestellungen
+  GROUP BY land
+) AS laender_stats
+WHERE avg_betrag > 100;
+```
+
+## Subquery mit IN
+```sql
+-- Produkte die mindestens einmal bestellt wurden
+SELECT name FROM produkte
+WHERE id IN (
+  SELECT DISTINCT produkt_id FROM bestellpositionen
+);
+
+-- Negation: nie bestellte Produkte
+SELECT name FROM produkte
+WHERE id NOT IN (
+  SELECT DISTINCT produkt_id FROM bestellpositionen
+  WHERE produkt_id IS NOT NULL
+);
+```
+
+## CTE — Common Table Expression
+Lesbarer und wiederverwendbar:
+```sql
+WITH aktive_kunden AS (
+  SELECT id, name, SUM(betrag) AS umsatz
+  FROM kunden k
+  JOIN bestellungen b ON k.id = b.kunden_id
+  WHERE b.datum >= '2024-01-01'
+  GROUP BY k.id, k.name
+),
+top_kunden AS (
+  SELECT * FROM aktive_kunden
+  WHERE umsatz > 1000
+)
+SELECT * FROM top_kunden ORDER BY umsatz DESC;
+```
+
+## Rekursive CTEs (z.B. für Hierarchien)
+```sql
+WITH RECURSIVE kategorie_baum AS (
+  SELECT id, name, parent_id, 0 AS tiefe FROM kategorien WHERE parent_id IS NULL
+  UNION ALL
+  SELECT k.id, k.name, k.parent_id, t.tiefe + 1
+  FROM kategorien k
+  JOIN kategorie_baum t ON k.parent_id = t.id
+)
+SELECT * FROM kategorie_baum ORDER BY tiefe;
+```
+
+**Merke:** CTE = Subquery mit Namen — besser lesbar, wiederverwendbar, auch rekursiv nutzbar$C$,
+   '["SQL","Subquery","CTE","WITH","Unterabfrage"]', 'Abfragen'),
+
+  (v_sql_box, v_uid, 'Window Functions',
+$C$**Window Functions** berechnen Werte über eine Gruppe von Zeilen, ohne sie zu aggregieren.
+
+## Grundstruktur
+```sql
+funktion() OVER (
+  PARTITION BY spalte    -- Gruppen bilden
+  ORDER BY spalte        -- Reihenfolge innerhalb der Gruppe
+  ROWS BETWEEN ...       -- optionales Fenster
+)
+```
+
+## ROW_NUMBER, RANK, DENSE_RANK
+```sql
+SELECT
+  name,
+  umsatz,
+  ROW_NUMBER() OVER (ORDER BY umsatz DESC) AS zeile,
+  RANK()       OVER (ORDER BY umsatz DESC) AS rang,       -- Lücken bei Gleichen
+  DENSE_RANK() OVER (ORDER BY umsatz DESC) AS dichte_rang -- keine Lücken
+FROM verkaeufer;
+```
+
+| name  | umsatz | ROW_NUMBER | RANK | DENSE_RANK |
+|-------|--------|-----------|------|------------|
+| Anna  | 5000   | 1         | 1    | 1          |
+| Max   | 4500   | 2         | 2    | 2          |
+| Lisa  | 4500   | 3         | 2    | 2          |
+| Tom   | 3000   | 4         | 4    | 3          |
+
+## PARTITION BY — Gruppen
+```sql
+-- Rang innerhalb jeder Kategorie (nicht global)
+SELECT name, kategorie, preis,
+  RANK() OVER (PARTITION BY kategorie ORDER BY preis DESC) AS rang_in_kat
+FROM produkte;
+```
+
+## LAG & LEAD — Nachbarwerte
+```sql
+SELECT datum, umsatz,
+  LAG(umsatz, 1) OVER (ORDER BY datum)  AS vormonat,
+  umsatz - LAG(umsatz, 1) OVER (ORDER BY datum) AS veraenderung
+FROM monats_umsatz;
+```
+
+## SUM/AVG als Window Function
+```sql
+SELECT name, betrag,
+  SUM(betrag) OVER () AS gesamtsumme,
+  SUM(betrag) OVER (PARTITION BY abt) AS abteilungs_summe,
+  betrag / SUM(betrag) OVER () * 100 AS anteil_prozent
+FROM verkaeufe;
+```
+
+**Merke:** Window Functions = Aggregat OHNE GROUP BY; Zeilen bleiben erhalten$C$,
+   '["SQL","Window Functions","RANK","ROW_NUMBER","PARTITION BY"]', 'Fortgeschritten'),
+
+  (v_sql_box, v_uid, 'DDL — Tabellen erstellen & verwalten',
+$C$**DDL (Data Definition Language)** definiert die Datenbankstruktur.
+
+## CREATE TABLE
+```sql
+CREATE TABLE kunden (
+  id          SERIAL PRIMARY KEY,           -- Auto-Increment
+  email       VARCHAR(255) NOT NULL UNIQUE, -- eindeutig, Pflicht
+  vorname     VARCHAR(100) NOT NULL,
+  nachname    VARCHAR(100) NOT NULL,
+  geburtsdatum DATE,                        -- optional
+  erstellt_am TIMESTAMPTZ DEFAULT NOW(),    -- Zeitzone + Default
+  aktiv       BOOLEAN DEFAULT TRUE,
+  typ         VARCHAR(20) CHECK (typ IN ('privat','firma'))
+);
+```
+
+## Datentypen (PostgreSQL)
+| Typ | Verwendung |
+|-----|-----------|
+| `INTEGER` / `BIGINT` | Ganzzahlen |
+| `NUMERIC(10,2)` | Exakte Dezimalzahlen (Geld!) |
+| `FLOAT` / `REAL` | Gleitkomma (ungenau!) |
+| `VARCHAR(n)` | Text bis n Zeichen |
+| `TEXT` | Beliebig langer Text |
+| `BOOLEAN` | true / false |
+| `DATE` | Datum ohne Zeit |
+| `TIMESTAMP` | Datum + Zeit (ohne TZ) |
+| `TIMESTAMPTZ` | Datum + Zeit + Zeitzone |
+| `UUID` | Eindeutiger Identifier |
+| `JSONB` | JSON-Daten (binär, indizierbar) |
+| `SERIAL` | Auto-Increment Integer |
+
+## ALTER TABLE
+```sql
+ALTER TABLE kunden ADD COLUMN telefon VARCHAR(20);
+ALTER TABLE kunden DROP COLUMN telefon;
+ALTER TABLE kunden ALTER COLUMN email SET NOT NULL;
+ALTER TABLE kunden RENAME COLUMN alt_name TO neu_name;
+ALTER TABLE kunden ADD CONSTRAINT uk_email UNIQUE (email);
+```
+
+## DROP TABLE
+```sql
+DROP TABLE kunden;               -- löscht Tabelle
+DROP TABLE IF EXISTS kunden;     -- kein Fehler wenn nicht vorhanden
+TRUNCATE TABLE kunden;           -- löscht NUR Daten, Struktur bleibt
+```
+
+**Merke:** CREATE = erstellen; ALTER = verändern; DROP = löschen; TRUNCATE = leeren$C$,
+   '["SQL","DDL","CREATE TABLE","Datentypen","Datenbankdesign"]', 'Datenbankdesign'),
+
+  (v_sql_box, v_uid, 'Normalisierung (1NF – 3NF)',
+$C$**Normalisierung** reduziert Redundanzen in Datenbanken und verbessert die Datenkonsistenz.
+
+## Unnormalisierte Tabelle (Problem)
+```
+bestellungen:
+id | kundname | kundtel   | produkte              | kategorien
+1  | Max M.   | 0171-123  | Laptop, Maus          | Technik, Zubehör
+2  | Lisa K.  | 0151-456  | Tastatur              | Zubehör
+```
+Probleme: Duplikate, schwer zu ändern, Anomalien bei Insert/Update/Delete.
+
+## 1. Normalform (1NF)
+**Regel:** Keine wiederholenden Gruppen; atomare Werte.
+```
+-- Produkte in eigene Zeilen aufteilen
+id | kunden_id | produkt_id
+1  | 1         | 101        -- Laptop
+2  | 1         | 102        -- Maus
+3  | 2         | 103        -- Tastatur
+```
+
+## 2. Normalform (2NF)
+**Regel:** 1NF + Jede Nicht-Schlüssel-Spalte hängt vom GESAMTEN Primary Key ab.
+Betrifft zusammengesetzte PKs:
+```
+-- FALSCH: kunden_name hängt nur von kunden_id ab, nicht von (kunden_id, produkt_id)
+FALSCH: (kunden_id, produkt_id, kunden_name)
+-- RICHTIG: kunden in eigene Tabelle auslagern
+```
+
+## 3. Normalform (3NF)
+**Regel:** 2NF + Keine transitiven Abhängigkeiten (NichtSchlüssel → NichtSchlüssel).
+```
+-- FALSCH: plz → ort (transitiv: id → plz → ort)
+kunden: id, plz, ort
+
+-- RICHTIG: ort auslagern
+kunden: id, plz_id
+postleitzahlen: plz_id, plz, ort
+```
+
+## Wann denormalisieren?
+Performance-Optimierung: Joins sind teuer; für Read-Heavy-Systeme (z.B. Reports) manchmal Redundanz gewünscht → Data Warehouses nutzen Sternschema (denormalisiert).
+
+**Merke:** 1NF = atomar; 2NF = kein Teil-PK-Abhängigkeit; 3NF = keine transitiven Abhängigkeiten$C$,
+   '["SQL","Normalisierung","1NF","2NF","3NF","Datenbankdesign"]', 'Datenbankdesign'),
+
+  (v_sql_box, v_uid, 'Indexe & Performance',
+$C$**Indexe** beschleunigen Datenbankabfragen — wie ein Buchindex.
+
+## Wie funktioniert ein Index?
+Ohne Index: DB liest ALLE Zeilen (Full Table Scan).
+Mit Index: DB springt direkt zu den relevanten Zeilen.
+
+## Index erstellen
+```sql
+-- Standard-Index (B-Tree)
+CREATE INDEX idx_kunden_email ON kunden(email);
+CREATE INDEX idx_bestellungen_datum ON bestellungen(datum);
+
+-- Eindeutiger Index
+CREATE UNIQUE INDEX idx_kunden_email_unique ON kunden(email);
+
+-- Zusammengesetzter Index (Reihenfolge wichtig!)
+CREATE INDEX idx_bestellungen_kunde_datum ON bestellungen(kunden_id, datum);
+
+-- Partieller Index (nur für bestimmte Werte)
+CREATE INDEX idx_aktive_kunden ON kunden(email) WHERE aktiv = true;
+
+-- Index löschen
+DROP INDEX idx_kunden_email;
+```
+
+## Wann hilft ein Index?
+- WHERE-Bedingungen: `WHERE email = '...'`
+- JOIN-Spalten: `ON k.id = b.kunden_id`
+- ORDER BY-Spalten
+- Spalten mit hoher Kardinalität (viele unterschiedliche Werte)
+
+## Wann hilft kein Index?
+- Spalte mit wenig unterschiedlichen Werten (z.B. boolean `aktiv`)
+- Kleine Tabellen (< 1000 Zeilen)
+- Spalten die nie in WHERE/JOIN vorkommen
+
+## EXPLAIN ANALYZE — Abfrageplan
+```sql
+EXPLAIN ANALYZE
+SELECT * FROM kunden WHERE email = 'max@example.com';
+
+-- Ausgabe zeigt: Index Scan vs. Seq Scan, Kosten, Zeit
+```
+
+## Index-Typen (PostgreSQL)
+- **B-Tree** (Standard): Vergleiche, BETWEEN, IN
+- **Hash**: Nur = Vergleiche
+- **GIN**: Volltextsuche, Arrays, JSONB
+- **GiST**: Geometrie, Geographiedaten
+
+**Merke:** Index = Lesegeschwindigkeit +; Schreibgeschwindigkeit -; nie blind indizieren$C$,
+   '["SQL","Index","Performance","EXPLAIN","Optimierung"]', 'Performance'),
+
+  (v_sql_box, v_uid, 'Transaktionen & ACID',
+$C$**Transaktionen** gruppieren mehrere SQL-Operationen zu einer atomaren Einheit.
+
+## ACID-Eigenschaften
+
+**A — Atomicity (Atomarität)**
+Alles oder nichts — entweder alle Operationen erfolgen oder keine.
+*Beispiel: Banküberweisung = Konto A abbauchen UND Konto B aufbauen. Nie nur eines.*
+
+**C — Consistency (Konsistenz)**
+Transaktion überführt DB von einem konsistenten Zustand in den nächsten.
+Constraints (PRIMARY KEY, FOREIGN KEY, CHECK) müssen vor und nach der Transaktion erfüllt sein.
+
+**I — Isolation (Isolation)**
+Parallele Transaktionen stören sich nicht gegenseitig.
+Isolation Levels: READ UNCOMMITTED < READ COMMITTED < REPEATABLE READ < SERIALIZABLE
+
+**D — Durability (Dauerhaftigkeit)**
+Nach COMMIT sind Daten dauerhaft gespeichert — auch bei Systemabsturz.
+Wird durch Write-Ahead-Log (WAL) sichergestellt.
+
+## Transaktion in SQL
+```sql
+BEGIN;                          -- Transaktion starten
+
+UPDATE konten SET saldo = saldo - 100 WHERE id = 1;
+UPDATE konten SET saldo = saldo + 100 WHERE id = 2;
+
+-- Prüfen ob alles ok
+COMMIT;  -- dauerhaft speichern
+
+-- Bei Fehler:
+ROLLBACK; -- alle Änderungen rückgängig machen
+```
+
+## SAVEPOINT
+```sql
+BEGIN;
+INSERT INTO log VALUES ('Start');
+SAVEPOINT vor_update;
+UPDATE ... ;
+-- wenn Update fehlschlägt:
+ROLLBACK TO vor_update;  -- nur bis zum Savepoint zurück
+COMMIT;
+```
+
+**Merke:** ACID = Atomarität, Konsistenz, Isolation, Dauerhaftigkeit; COMMIT = speichern; ROLLBACK = rückgängig$C$,
+   '["SQL","ACID","Transaktion","COMMIT","ROLLBACK"]', 'Grundlagen'),
+
+  (v_sql_box, v_uid, 'Stored Procedures, Views & Trigger',
+$C$Datenbank-Objekte die Logik in der Datenbank kapseln.
+
+## View — virtuelle Tabelle
+```sql
+-- View erstellen
+CREATE VIEW aktive_kunden AS
+SELECT id, vorname, nachname, email
+FROM kunden
+WHERE aktiv = true AND geloescht_am IS NULL;
+
+-- Wie normale Tabelle abfragen
+SELECT * FROM aktive_kunden WHERE land = 'DE';
+
+-- View entfernen
+DROP VIEW aktive_kunden;
+```
+
+**Vorteile:** Komplexe Abfragen verbergen, Zugriffsschutz (Nutzer sieht nur View, nicht Basistabelle).
+
+## Stored Procedure (PostgreSQL: Function)
+```sql
+CREATE OR REPLACE FUNCTION kunden_umsatz(p_kunden_id INT)
+RETURNS NUMERIC AS $$
+DECLARE
+  v_umsatz NUMERIC;
+BEGIN
+  SELECT COALESCE(SUM(betrag), 0)
+  INTO v_umsatz
+  FROM bestellungen
+  WHERE kunden_id = p_kunden_id;
+
+  RETURN v_umsatz;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Aufrufen
+SELECT kunden_umsatz(42);
+```
+
+## Trigger
+Automatisch ausgelöste Aktionen bei INSERT/UPDATE/DELETE:
+```sql
+CREATE OR REPLACE FUNCTION log_aenderung()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO audit_log(tabelle, aktion, zeitpunkt)
+  VALUES (TG_TABLE_NAME, TG_OP, NOW());
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER tr_kunden_log
+AFTER INSERT OR UPDATE OR DELETE ON kunden
+FOR EACH ROW EXECUTE FUNCTION log_aenderung();
+```
+
+**Merke:** View = gespeicherte Abfrage; Function = Logik in DB; Trigger = automatische Reaktion auf Events$C$,
+   '["SQL","View","Stored Procedure","Trigger","Datenbanklogik"]', 'Fortgeschritten'),
+
+  (v_sql_box, v_uid, 'SQL Injection & Sicherheit',
+$C$**SQL Injection** ist eine der häufigsten und gefährlichsten Sicherheitslücken in Web-Anwendungen.
+
+## Was ist SQL Injection?
+Angreifer schleust SQL-Code als Nutzereingabe ein:
+```python
+# UNSICHER: Direktes String-Concatenation
+name = request.get('name')  # Eingabe: "'; DROP TABLE kunden; --"
+query = "SELECT * FROM kunden WHERE name = '" + name + "'"
+# Ergebnis: SELECT * FROM kunden WHERE name = ''; DROP TABLE kunden; --'
+```
+→ Alle Kundendaten werden gelöscht!
+
+## Lösung: Parameterisierte Abfragen (Prepared Statements)
+```python
+# SICHER: Parameter werden NIEMALS als SQL interpretiert
+cursor.execute(
+  "SELECT * FROM kunden WHERE name = %s",
+  (name,)  # Tuple mit Parametern
+)
+```
+
+```javascript
+// Node.js / PostgreSQL (pg)
+const result = await client.query(
+  'SELECT * FROM kunden WHERE name = $1',
+  [name]
+);
+```
+
+```csharp
+// C# mit Entity Framework
+var kunde = context.Kunden
+  .Where(k => k.Name == name)  // Parameter automatisch sicher
+  .FirstOrDefault();
+```
+
+## Weitere Sicherheitsmaßnahmen
+- **Least Privilege:** DB-Nutzer darf nur lesen/schreiben — kein DROP, kein DDL
+- **Input Validation:** Server-seitig validieren (Typ, Länge, Format)
+- **ORM verwenden:** SQLAlchemy, EF Core, Prisma — generieren automatisch sichere Queries
+- **WAF (Web Application Firewall):** Filtert bekannte Angriffsmuster
+
+## Erkennung
+- Fehler-Meldungen mit SQL-Syntax im Frontend → Stack Traces verstecken!
+- Automatische Prüfung: OWASP ZAP, sqlmap
+
+**Merke:** NIEMALS Nutzereingaben direkt in SQL-Strings concatenieren — immer Prepared Statements!$C$,
+   '["SQL","Security","SQL Injection","Prepared Statements","OWASP"]', 'Sicherheit');
+
+  -- ════════════════════════════════════════════════════════════════
+  -- BUSINESS INTELLIGENCE
+  -- ════════════════════════════════════════════════════════════════
+
+  INSERT INTO cards (box_id, user_id, title, content, tags, category) VALUES
+  (v_bi_box, v_uid, 'Was ist Business Intelligence?',
+$C$**Business Intelligence (BI)** ist die Gesamtheit von Prozessen, Technologien und Tools, die aus Rohdaten entscheidungsrelevantes Wissen machen.
+
+## BI-Wertschöpfungskette
+```
+Rohdaten → ETL/ELT → Data Warehouse → Analyse/OLAP → Visualisierung → Entscheidung
+```
+
+## Ziel
+- Vergangenheit verstehen (Was ist passiert? — Reporting)
+- Gegenwart überwachen (Was passiert gerade? — Dashboards)
+- Zukunft vorhersagen (Was wird passieren? — Analytics)
+
+## BI vs. Analytics vs. Data Science
+| | BI | Advanced Analytics | Data Science |
+|--|----|--------------------|-------------|
+| Fokus | Reporting | Mustersuche | Vorhersage |
+| Frage | Was ist passiert? | Warum? | Was wird passieren? |
+| Tool | Power BI, Tableau | R, Python | ML, AI |
+| Nutzer | Manager | Analysten | Data Scientists |
+
+## Typische BI-Produkte
+- **Dashboards:** Live-Überblick über KPIs
+- **Reports:** Periodische PDF/Excel-Berichte
+- **Ad-hoc Abfragen:** Spontane Datenanalyse
+- **Drilldown:** Von Jahres- auf Monats- auf Tagesebene
+
+## BI-Rollen
+- **BI-Entwickler:** Baut Data Warehouse, Pipelines
+- **BI-Analyst:** Erstellt Reports und Dashboards
+- **Data Engineer:** ETL-Pipelines, Infrastruktur
+- **Business Analyst:** Übersetzt Geschäftsfragen in Daten
+
+**Merke:** BI = Daten in Entscheidungen umwandeln; nicht nur Technik, auch Prozesse und Kultur$C$,
+   '["BI","Business Intelligence","Grundlagen","Überblick","Analytics"]', 'Grundlagen'),
+
+  (v_bi_box, v_uid, 'Data Warehouse vs. Data Lake vs. Lakehouse',
+$C$Drei Architekturen zur Datenspeicherung für Analytics.
+
+## Data Warehouse (DWH)
+**Strukturierte, aufbereitete Daten** für Business-Nutzer:
+- Daten sind bereinigt, transformiert, integriert
+- Schema wird vorher definiert (Schema-on-Write)
+- Optimiert für Read/Analytics (OLAP)
+- Langsam bei neuen Datenquellen (Transformation nötig)
+
+Beispiele: Azure Synapse, Amazon Redshift, Snowflake, Google BigQuery
+
+## Data Lake
+**Rohdaten** in beliebigem Format, ohne Transformation:
+- Dateien, JSON, CSV, Bilder, Logs — alles rein
+- Schema wird beim Lesen definiert (Schema-on-Read)
+- Billige Massenspeicherung (Azure Blob, S3)
+- "Data Swamp"-Gefahr wenn ungepflegt
+
+Beispiele: Azure Data Lake Storage (ADLS), AWS S3, Google Cloud Storage
+
+## Data Lakehouse (modern)
+Kombiniert beide Vorteile:
+- Rohdaten + ACID-Transaktionen + Schema-Enforcement
+- Direktes SQL auf Rohdaten (Delta Lake, Apache Iceberg)
+- Kein separates DWH nötig
+
+Beispiele: Azure Databricks, Delta Lake, Apache Hudi
+
+## Entscheidungshilfe
+| Aspekt | DWH | Data Lake | Lakehouse |
+|--------|-----|-----------|-----------|
+| Datenformat | Strukturiert | Alle | Alle |
+| Schema | Vorher | Beim Lesen | Optional |
+| Kosten | Hoch | Niedrig | Mittel |
+| SQL | Ja | Eingeschränkt | Ja |
+| ML/AI | Nein | Ja | Ja |
+
+**Merke:** DWH = sauber & structured; Lake = alles rein; Lakehouse = das Beste beider Welten$C$,
+   '["BI","Data Warehouse","Data Lake","Lakehouse","Architektur"]', 'Architektur'),
+
+  (v_bi_box, v_uid, 'ETL vs. ELT — Datenpipelines',
+$C$**ETL** und **ELT** sind die zwei Hauptarchitekturen für Datenpipelines.
+
+## ETL — Extract, Transform, Load (klassisch)
+
+```
+Quellsystem → [Extract] → [Transform] → [Load] → Data Warehouse
+```
+
+1. **Extract:** Daten aus Quellen lesen (DB, API, Files)
+2. **Transform:** Bereinigung, Konvertierung, Anreicherung — in separatem System
+3. **Load:** Transformierte Daten ins DWH laden
+
+**Geeignet für:** Traditionelle DWHs, sensible Daten (Transformation außerhalb des DWH)
+
+Tools: SSIS, Talend, Informatica, Azure Data Factory
+
+## ELT — Extract, Load, Transform (modern)
+
+```
+Quellsystem → [Extract] → [Load] → [Transform im DWH] → Analytics
+```
+
+1. **Extract:** Daten aus Quellen
+2. **Load:** Rohdaten direkt ins DWH/Lakehouse
+3. **Transform:** Transformation MIT Power des DWH (SQL, Spark)
+
+**Geeignet für:** Cloud-DWHs (Snowflake, BigQuery), große Datenmengen
+
+Tools: dbt (data build tool), Fivetran, Airbyte, Azure Synapse Pipelines
+
+## Typische Pipeline-Schichten
+```
+Bronze (Raw)   → Rohdaten, unverändert
+Silver (Staged)→ Bereinigt, dedupliziert
+Gold (Curated) → Business-Logik, aggregiert, für Reports
+```
+(Medallion Architecture — Azure Databricks Standard)
+
+## dbt (data build tool)
+Transformationen als SQL + Git + Tests:
+```sql
+-- models/silver/kunden_bereinigt.sql
+SELECT
+  id,
+  TRIM(LOWER(email)) AS email,
+  COALESCE(vorname, 'Unbekannt') AS vorname
+FROM {{ ref('raw_kunden') }}
+WHERE email IS NOT NULL
+```
+
+**Merke:** ETL = Transform vor Load (sicher, langsam); ELT = Transform nach Load (schnell, skalierbar)$C$,
+   '["BI","ETL","ELT","Pipeline","dbt","Datentransformation"]', 'Datenpipeline'),
+
+  (v_bi_box, v_uid, 'Dimensionales Modell — Star Schema',
+$C$Das **dimensionale Datenmodell** ist das Standard-Datenbankdesign für Business Intelligence.
+
+## Grundprinzip
+Trennung zwischen:
+- **Faktentabelle:** Was ist gemessen? (Transaktionen, Ereignisse)
+- **Dimensionstabellen:** Wer, Was, Wo, Wann?
+
+## Star Schema
+```
+           [DIM_Zeit]
+               |
+[DIM_Produkt]──[FAKT_Verkauf]──[DIM_Kunde]
+               |
+           [DIM_Region]
+```
+
+**Faktentabelle `FAKT_Verkauf`:**
+```
+datum_id    (FK → DIM_Zeit)
+produkt_id  (FK → DIM_Produkt)
+kunden_id   (FK → DIM_Kunde)
+region_id   (FK → DIM_Region)
+menge       ← Metrik (Fakt)
+umsatz      ← Metrik (Fakt)
+rabatt      ← Metrik (Fakt)
+```
+
+**Dimensionstabelle `DIM_Zeit`:**
+```
+datum_id, datum, tag, monat, quartal, jahr, wochentag, is_wochenende
+```
+
+## Snowflake Schema
+Dimensionstabellen werden weiter normalisiert:
+```
+DIM_Produkt → DIM_Kategorie → DIM_Oberkategorie
+```
+Vorteil: weniger Redundanz. Nachteil: mehr JOINs, langsamer.
+
+## Slowly Changing Dimensions (SCD)
+Dimensionen ändern sich über Zeit:
+- **SCD Typ 1:** Überschreiben (kein Verlauf)
+- **SCD Typ 2:** Neue Zeile hinzufügen mit Gültigkeitszeitraum (Verlauf behalten)
+- **SCD Typ 3:** Spalten für alt + neu (begrenzt)
+
+**Merke:** Star Schema = eine Faktentabelle + mehrere Dimensionen; optimiert für OLAP-Abfragen$C$,
+   '["BI","Star Schema","Dimensionales Modell","Faktentabelle","Dimension"]', 'Datenbankdesign'),
+
+  (v_bi_box, v_uid, 'OLAP vs. OLTP',
+$C$Zwei fundamental verschiedene Datenbankkonzepte.
+
+## OLTP — Online Transaction Processing
+Für den **operativen Betrieb** — Anwendungen die täglich arbeiten:
+- Viele kleine, schnelle Transaktionen
+- INSERT, UPDATE, DELETE dominieren
+- Normalisierte Struktur (3NF)
+- Viele gleichzeitige Nutzer (Webshop-Kunden)
+- Ziel: schnelle Schreibvorgänge, Konsistenz
+
+**Beispiele:** SAP, CRM-System, Webshop-Datenbank, Banking-Core
+
+## OLAP — Online Analytical Processing
+Für **Analysen und Reports** — Manager/Analysten:
+- Wenige, große, komplexe Abfragen
+- SELECT dominiert, über Millionen Zeilen
+- Denormalisierte Struktur (Star Schema)
+- Wenige gleichzeitige Nutzer, dafür große Queries
+- Ziel: schnelle Leseabfragen, Aggregationen
+
+**Beispiele:** Data Warehouse, Power BI, Synapse Analytics
+
+## Vergleich
+| Merkmal | OLTP | OLAP |
+|---------|------|------|
+| Abfragetyp | Einzel-Transaktionen | Aggregationen über viele Zeilen |
+| Schema | Normalisiert (3NF) | Denormalisiert (Star) |
+| Datenmenge | GB | TB–PB |
+| Nutzer | App-Nutzer | Analysten/Manager |
+| Latenz | ms | Sekunden–Minuten |
+| Ziel | Betrieb | Entscheidung |
+
+## HTAP — Hybrid (modern)
+Neuere Systeme (Snowflake, CockroachDB) kombinieren beides.
+
+**Merke:** OLTP = Betrieb (viele kleine Schreibvorgänge); OLAP = Analyse (wenige große Leseabfragen)$C$,
+   '["BI","OLAP","OLTP","Unterschied","Datenbank"]', 'Grundlagen'),
+
+  (v_bi_box, v_uid, 'Power BI Grundlagen',
+$C$**Power BI** ist Microsofts Self-Service BI-Tool — weit verbreitet in Unternehmen.
+
+## Power BI Komponenten
+| Komponente | Funktion |
+|-----------|---------|
+| **Power BI Desktop** | Report-Entwicklung (Windows-App, kostenlos) |
+| **Power BI Service** | Cloud-Plattform für Veröffentlichung und Sharing |
+| **Power BI Mobile** | Mobile App für Reports |
+| **Power BI Gateway** | Verbindung zu lokalen Datenquellen |
+| **Power BI Embedded** | BI in eigene Anwendungen einbetten |
+
+## Workflow
+1. **Get Data:** Daten laden (Excel, SQL, API, Azure, usw.)
+2. **Transform:** Power Query / M Language (ETL in Power BI)
+3. **Model:** Beziehungen zwischen Tabellen definieren (Star Schema)
+4. **Measure:** DAX-Formeln für KPIs schreiben
+5. **Report:** Visuals auf Seiten ziehen
+6. **Publish:** Auf Power BI Service veröffentlichen
+7. **Share:** Dashboard mit Kollegen teilen
+
+## Power Query (M Language)
+Low-Code ETL direkt in Power BI:
+```
+Quelle → Filterzeilen → Spalten umbenennen → Typen setzen → Laden
+```
+
+## DAX (Data Analysis Expressions)
+Formelsprache für berechnete Spalten und Measures:
+```dax
+Gesamtumsatz = SUM(Verkauf[Umsatz])
+
+Umsatz_Vorjahr = CALCULATE(
+  SUM(Verkauf[Umsatz]),
+  SAMEPERIODLASTYEAR(Datum[Datum])
+)
+
+Wachstum% = DIVIDE([Gesamtumsatz] - [Umsatz_Vorjahr], [Umsatz_Vorjahr])
+```
+
+**Merke:** Power BI = Daten laden (Power Query) + Modellieren + DAX-Formeln + Visualisieren$C$,
+   '["BI","Power BI","DAX","Power Query","Microsoft"]', 'Tools'),
+
+  (v_bi_box, v_uid, 'KPIs, Metriken & Datenvisualisierung',
+$C$**KPIs (Key Performance Indicators)** messen den Fortschritt zu einem Ziel.
+
+## KPI-Definition
+Ein guter KPI ist:
+- **Messbar:** konkrete Zahl (nicht "besser werden")
+- **Zeitgebunden:** Vergleichszeitraum definiert
+- **Aktionable:** Man kann darauf reagieren
+- **Relevant:** Direkt verknüpft mit Unternehmensziel
+
+## KPI-Beispiele
+| Bereich | KPI | Ziel |
+|---------|-----|------|
+| Vertrieb | Monatlicher Umsatz | 100.000 € |
+| E-Commerce | Conversion Rate | > 3% |
+| Support | Erstlösungsrate | > 80% |
+| IT | Systemverfügbarkeit | 99,9% |
+| HR | Fluktuation | < 10% |
+
+## Visualisierungsregeln
+
+**Richtiger Chart-Typ:**
+| Datentyp | Chart |
+|----------|-------|
+| Trend über Zeit | Liniendiagramm |
+| Vergleich Kategorien | Balkendiagramm |
+| Anteile (< 5 Kategorien) | Kreisdiagramm |
+| Korrelation | Streudiagramm |
+| Tabelle mit vielen Werten | Heatmap |
+| KPI-Überblick | Karte / Gauge |
+
+**Farben:**
+- Max. 5-7 Farben pro Diagramm
+- Rot = schlecht/Warnung, Grün = gut (kulturabhängig)
+- Farbblindheit beachten (kein Rot/Grün alleine)
+
+**Gestaltprinzipien:**
+- Weniger ist mehr (keine Dekoration)
+- Beschriftungen direkt an Datenpunkten
+- Konsistente Achsenstartwerte (kein Truncated Y-Axis!)
+
+**Merke:** KPI = messbar + zeitgebunden + aktionable; Chart-Typ zum Datentyp passen$C$,
+   '["BI","KPI","Metriken","Datenvisualisierung","Dashboard"]', 'Analyse'),
+
+  (v_bi_box, v_uid, 'Azure Synapse Analytics & Databricks',
+$C$Microsofts führende Cloud-Analytics-Plattformen.
+
+## Azure Synapse Analytics
+
+**All-in-One-Plattform** für Data Warehousing + Big Data:
+
+**Komponenten:**
+- **Dedicated SQL Pool:** Data Warehouse (MPP-Engine, massiv parallel)
+- **Serverless SQL Pool:** Ad-hoc SQL direkt auf Data Lake (kein Cluster nötig)
+- **Apache Spark Pool:** Big Data-Verarbeitung mit Python/Scala
+- **Pipelines:** ETL/ELT-Orchestrierung (ADF-kompatibel)
+- **Power BI Integration:** Direkt in Synapse Studio
+
+```sql
+-- Serverless SQL auf ADLS (kein Laden nötig!)
+SELECT TOP 100 *
+FROM OPENROWSET(
+  BULK 'https://storage.blob.core.windows.net/data/kunden/*.parquet',
+  FORMAT = 'PARQUET'
+) AS kunden
+WHERE land = 'DE';
+```
+
+## Azure Databricks
+**Apache Spark-basierte Daten- und KI-Plattform:**
+
+- Optimierte Spark-Umgebung auf Azure
+- **Delta Lake:** ACID-Transaktionen auf Data Lake
+- **MLflow:** Machine-Learning-Lifecycle
+- **Unity Catalog:** Zentrale Datenverwaltung
+
+```python
+# PySpark auf Databricks
+df = spark.read.parquet("abfss://data@storage.dfs.core.windows.net/kunden/")
+df_de = df.filter(df.land == "DE")
+df_de.write.format("delta").saveAsTable("kunden_de")
+```
+
+## Medallion Architecture auf Databricks
+```
+ADLS Bronze (raw) → Silver (cleaned) → Gold (aggregated) → Power BI
+```
+
+**Merke:** Synapse = SQL + Spark integriert; Databricks = Spark-First, besser für ML/AI$C$,
+   '["BI","Azure Synapse","Databricks","Spark","Data Warehouse"]', 'Cloud');
+
+  -- ════════════════════════════════════════════════════════════════
+  -- GESCHÄFTSPROZESSE
+  -- ════════════════════════════════════════════════════════════════
+
+  INSERT INTO cards (box_id, user_id, title, content, tags, category) VALUES
+  (v_bprozesse, v_uid, 'Was ist ein Geschäftsprozess?',
+$C$Ein **Geschäftsprozess** ist eine strukturierte Folge von Aktivitäten, die einen definierten Input in einen definierten Output umwandelt und dabei Wert für den Kunden oder das Unternehmen schafft.
+
+## Definition
+> Geschäftsprozess = Abfolge von Tätigkeiten → Ziel: Kundennutzen erzeugen
+
+## Merkmale eines Geschäftsprozesses
+- **Auslöser (Trigger):** Ereignis das den Prozess startet (Kundenauftrag, Zeitplan)
+- **Aktivitäten:** Einzelne Schritte/Aufgaben
+- **Rollen:** Wer führt was aus? (Abteilungen, Personen)
+- **Input:** Was wird benötigt? (Daten, Material)
+- **Output:** Was entsteht? (Produkt, Dokument, Entscheidung)
+- **Ende:** Wann ist der Prozess abgeschlossen?
+- **Messbarkeit:** KPIs zur Prozessbewertung
+
+## Prozessarten
+| Art | Beschreibung | Beispiel |
+|-----|-------------|---------|
+| **Kernprozesse** | Direkte Wertschöpfung für Kunden | Auftragsabwicklung, Produktion |
+| **Unterstützungsprozesse** | Ermöglichen Kernprozesse | HR, IT, Buchhaltung |
+| **Führungsprozesse** | Steuerung des Unternehmens | Strategieplanung, Controlling |
+
+## Wertschöpfungskette nach Porter
+```
+Eingangslogistik → Produktion → Ausgangslogistik → Marketing → Kundendienst
+        ↑______ Unterstützungsaktivitäten (HR, IT, Infrastruktur) ______↑
+```
+
+## Prozess vs. Projekt
+| | Prozess | Projekt |
+|--|---------|---------|
+| Wiederholung | Wiederkehrend | Einmalig |
+| Ende | Offen | Definiertes Ende |
+| Beispiel | Monatsabschluss | ERP-Einführung |
+
+**Merke:** Prozess = wiederholbare Aktivitätsfolge; Ziel = effizienter Kundennutzen$C$,
+   '["Prozess","Grundlagen","Wertschöpfung","Porter","Prozessmanagement"]', 'Grundlagen'),
+
+  (v_bprozesse, v_uid, 'BPMN 2.0 — Grundlagen & Notation',
+$C$**BPMN (Business Process Model and Notation)** ist der weltweite Standard zur Visualisierung von Geschäftsprozessen.
+
+## Warum BPMN?
+- Einheitliche Sprache für Business UND IT
+- Verständlich für alle Stakeholder
+- Maschinenlesbar (Prozess-Engines können BPMN ausführen)
+- ISO/IEC Standard 19510
+
+## Grundelemente
+
+### Flow Objects (Was passiert?)
+| Symbol | Name | Beschreibung |
+|--------|------|-------------|
+| Kreis (dünn) | Start-Event | Startet den Prozess |
+| Kreis (fett/doppelt) | End-Event | Beendet den Prozess |
+| Abgerundetes Rechteck | Task/Aufgabe | Aktivität |
+| Raute | Gateway | Verzweigung/Zusammenführung |
+
+### Gateways (Entscheidungen)
+| Symbol | Typ | Bedeutung |
+|--------|-----|---------|
+| Raute leer (X-Gateway) | Exclusive (XOR) | Genau ein Pfad |
+| Raute (+) | Parallel (AND) | Alle Pfade gleichzeitig |
+| Raute (O) | Inclusive (OR) | Ein oder mehrere Pfade |
+
+### Swimlanes
+- **Pool:** Repräsentiert eine Organisation
+- **Lane:** Abteilung oder Rolle innerhalb des Pools
+
+```
+Pool: Bestellprozess
+├── Lane: Kunde     [Bestellung aufgeben] → [Zahlung leisten]
+├── Lane: Vertrieb  [Bestellung prüfen]   → [Bestätigung senden]
+└── Lane: Lager     [Waren kommissionieren] → [Versand]
+```
+
+## Ereignistypen
+- **Start:** Nachricht, Timer, Bedingung
+- **Zwischen:** Nachricht senden/empfangen, Timer warten
+- **End:** Nachricht senden, Fehler, Abbruch
+
+**Merke:** BPMN = gemeinsame Sprache für Prozesse; Pool = Organisation; Lane = Rolle$C$,
+   '["BPMN","Prozessmodellierung","Notation","Standard","Diagramm"]', 'Modellierung'),
+
+  (v_bprozesse, v_uid, 'Lean Management & Waste (Muda)',
+$C$**Lean Management** ist eine Methode zur Eliminierung von Verschwendung und kontinuierlichen Prozessverbesserung. Ursprung: Toyota Production System (TPS).
+
+## Lean-Grundprinzipien
+1. **Wert definieren** — aus Kundenperspektive, was ist der Kunde bereit zu bezahlen?
+2. **Wertstrom identifizieren** — alle Schritte von Rohstoff bis Kunde
+3. **Fluss erzeugen** — Wertschöpfung ohne Unterbrechungen
+4. **Pull-Prinzip** — Nur produzieren was benötigt wird
+5. **Perfektion anstreben** — Kontinuierliche Verbesserung (Kaizen)
+
+## 7 Verschwendungsarten (Muda — 無駄)
+| Nr | Bezeichnung | Beispiel |
+|----|-------------|---------|
+| 1 | Überproduktion | Mehr produzieren als gebraucht |
+| 2 | Warten | Auf Genehmigung, Material, Info warten |
+| 3 | Transport | Unnötige Bewegung von Material |
+| 4 | Überbearbeitung | Mehr Qualität als nötig |
+| 5 | Lagerbestand | Hohe Bestände = gebundenes Kapital |
+| 6 | Bewegung | Unnötige Wege von Mitarbeitern |
+| 7 | Fehler / Nacharbeit | Ausschuss, Korrektur |
+
+*Modern: +8. Ungenutztes Wissen/Potenzial der Mitarbeiter*
+
+## Lean in IT/Software
+- Backlog = Überproduktion wenn nicht priorisiert
+- Lange Reviews = Warten
+- Komplexe Architektur ohne Nutzen = Überbearbeitung
+- Unnötige Features = Überproduktion
+
+**Merke:** Lean = Verschwendung eliminieren; 7 Muda; Wert für Kunden maximieren$C$,
+   '["Lean","Muda","Verschwendung","Prozessoptimierung","Toyota"]', 'Optimierung'),
+
+  (v_bprozesse, v_uid, 'Value Stream Mapping (VSM)',
+$C$**Value Stream Mapping (VSM)** visualisiert den gesamten Wertstrom von Kundenanfrage bis Lieferung.
+
+## Zweck
+- Alle wertschöpfenden UND nicht-wertschöpfenden Schritte sichtbar machen
+- Engpässe (Bottlenecks) identifizieren
+- Durchlaufzeit vs. Wertschöpfungszeit vergleichen
+
+## VSM-Symbole
+- **Prozessbox:** Aktivität mit Kennzahlen (Takt, Bearbeitungszeit)
+- **Inventar-Dreieck:** Bestände zwischen Prozessen
+- **Push-Pfeil:** Material/Info wird weitergegeben ohne Bedarf
+- **Pull-Pfeil/Kanban:** Wird bei Bedarf abgerufen
+- **Zeitleiste:** Wertschöpfungszeit vs. Gesamtdurchlaufzeit
+
+## Kennzahlen im VSM
+- **Taktzeit:** Verfügbare Zeit / Kundenbedarf (Zielgeschwindigkeit)
+- **Zykluszeit:** Tatsächliche Bearbeitungszeit pro Einheit
+- **Durchlaufzeit:** Gesamtzeit von Anfang bis Ende
+- **Wertschöpfungsquote:** Wertschöpfungszeit / Durchlaufzeit × 100
+
+## Beispiel Software-Entwicklung
+```
+Anforderung → [Analyse: 2d] → [Entwicklung: 5d] → [Review: 3d] → [Test: 4d] → [Deploy: 1d]
+                    Wartezeit: 1d         2d          1d        2d
+Wertschöpfung: 15 Tage. Wartezeit: 6 Tage. DLZ: 21 Tage. Quote: 71%
+```
+
+## Current State vs. Future State
+VSM wird zweimal erstellt:
+1. **Current State Map:** Ist-Zustand aufnehmen
+2. **Future State Map:** Soll-Zustand entwerfen
+
+**Merke:** VSM = Wertstrom visuell machen; Wertschöpfungsquote erhöhen = Ziel$C$,
+   '["VSM","Value Stream Mapping","Lean","Wertstrom","Durchlaufzeit"]', 'Optimierung'),
+
+  (v_bprozesse, v_uid, 'Six Sigma & DMAIC',
+$C$**Six Sigma** ist eine datengetriebene Methode zur Qualitätsverbesserung durch Reduktion von Prozessvariabilität.
+
+## Was bedeutet Six Sigma?
+Sigma (σ) = Standardabweichung. Six Sigma = 6 Standardabweichungen zwischen Mittelwert und Spezifikationsgrenze.
+
+$$\text{Defektrate bei } 6\sigma = 3{,}4 \text{ Fehler pro Million Möglichkeiten (DPMO)}$$
+
+| Sigma-Level | Fehlerrate | Qualität |
+|-------------|-----------|---------|
+| 3σ | 66.800 DPMO | 93,32% |
+| 4σ | 6.210 DPMO | 99,38% |
+| 6σ | 3,4 DPMO | 99,99966% |
+
+## DMAIC — der Six Sigma Zyklus
+
+**D — Define (Definieren)**
+- Problem und Projektziel klar definieren
+- Project Charter erstellen
+- Stakeholder identifizieren
+
+**M — Measure (Messen)**
+- Ist-Zustand messen
+- Daten erheben
+- Baseline-Sigma berechnen
+
+**A — Analyze (Analysieren)**
+- Ursachen-Analyse (Fischgräten/Ishikawa-Diagramm)
+- 5 Why? (Warum-Warum-Analyse)
+- Statistische Analyse
+
+**I — Improve (Verbessern)**
+- Lösungen entwickeln und testen
+- Pilotierung
+
+**C — Control (Kontrollieren)**
+- Lösung dauerhaft verankern
+- Kontrollmechanismen einführen (SPC-Charts)
+
+## Rollen
+- **Black Belt:** Vollzeit Six Sigma-Experte, leitet Projekte
+- **Green Belt:** Nebenberuflich, arbeitet an Projekten mit
+- **Champion:** Management-Sponsor
+
+**Merke:** Six Sigma = 3,4 Fehler/Mio; DMAIC = Define-Measure-Analyze-Improve-Control$C$,
+   '["Six Sigma","DMAIC","Qualität","Prozessverbesserung","Sigma"]', 'Optimierung'),
+
+  (v_bprozesse, v_uid, 'RACI-Matrix',
+$C$Die **RACI-Matrix** definiert Verantwortlichkeiten für Aufgaben und Entscheidungen.
+
+## RACI-Buchstaben
+| Buchstabe | Englisch | Deutsch | Bedeutung |
+|-----------|----------|---------|-----------|
+| **R** | Responsible | Verantwortlich | Führt die Aufgabe durch |
+| **A** | Accountable | Rechenschaftspflichtig | Trägt die letzte Verantwortung (nur 1 pro Aufgabe!) |
+| **C** | Consulted | Konsultiert | Wird gefragt, gibt Input (2-Wege-Kommunikation) |
+| **I** | Informed | Informiert | Wird über Ergebnisse informiert (1-Weg) |
+
+## Beispiel RACI-Matrix
+| Aufgabe | Projektleiter | Entwickler | QA | Management |
+|---------|:------------:|:----------:|:--:|:----------:|
+| Anforderungen erheben | A | C | C | I |
+| Code schreiben | I | R | C | I |
+| Testing | C | C | R | I |
+| Go-Live Freigabe | R | I | I | A |
+| Budgetgenehmigung | C | I | I | A/R |
+
+## Regeln
+- Jede Aufgabe braucht genau **ein A** (Accountability)
+- Zu viele R in einer Zeile = unklare Verantwortung
+- Zu viele R in einer Spalte = Person überlastet
+- Keine RACI-Nennung = Person irrelevant für diese Aufgabe
+
+## Anwendung
+- Projektstart: Wer macht was?
+- Prozessdesign: Klare Rollen definieren
+- Organigramm-Übergaben: Handover strukturieren
+
+**Merke:** A = Verantwortung (nicht mehr als 1!); R = Umsetzung; C = Input geben; I = nur informiert$C$,
+   '["RACI","Verantwortung","Matrix","Rollen","Projektmanagement"]', 'Methoden'),
+
+  (v_bprozesse, v_uid, 'ERP-Systeme & SAP Grundlagen',
+$C$**ERP (Enterprise Resource Planning)** Systeme integrieren alle Kerngeschäftsprozesse in einem zentralen System.
+
+## Was ist ein ERP?
+- **Ein System, eine Datenbank** für alle Abteilungen
+- Verhindert Datensilos zwischen Abteilungen
+- Standardisiert Geschäftsprozesse
+
+## ERP-Module (typisch)
+| Modul | Inhalt |
+|-------|--------|
+| **FI** | Finanzbuchhaltung |
+| **CO** | Controlling |
+| **MM** | Materialwirtschaft (Einkauf, Lager) |
+| **SD** | Vertrieb & Distribution |
+| **PP** | Produktionsplanung |
+| **HR/HCM** | Personalwirtschaft |
+| **PM** | Instandhaltung |
+| **PS** | Projektmanagement |
+
+## SAP — Marktführer
+- **SAP ECC (R/3):** Klassisches SAP (On-Premise)
+- **SAP S/4HANA:** Moderne Version auf In-Memory-Datenbank (SAP HANA)
+- **SAP BTP:** Business Technology Platform (Cloud)
+
+```
+Vertrieb (SD) → Auftrag → Lager (MM) → Warenausgang → Buchhaltung (FI)
+```
+
+## Führende ERP-Anbieter
+- **SAP** (Enterprise, DACH-Marktführer)
+- **Microsoft Dynamics 365** (KMU + Enterprise)
+- **Oracle ERP Cloud**
+- **Infor**
+
+## Business Prozess in SAP
+Alles ist als Transaktion kodiert:
+- `VA01`: Kundenauftrag anlegen
+- `ME21N`: Bestellung anlegen
+- `FB50`: Buchungsbeleg erfassen
+
+**Merke:** ERP = alle Geschäftsprozesse in einem System; SAP = Marktführer in DACH$C$,
+   '["ERP","SAP","Geschäftsprozesse","Software","S4HANA"]', 'Software'),
+
+  (v_bprozesse, v_uid, 'Prozessoptimierung — Methoden im Überblick',
+$C$Ein Überblick über die wichtigsten Prozessoptimierungsmethoden.
+
+## Kaizen (Kontinuierliche Verbesserung)
+Aus Japan: "Kai" = Veränderung, "Zen" = zum Guten.
+- Kleine, schrittweise Verbesserungen statt großer Umbrüche
+- Alle Mitarbeiter sind beteiligt
+- PDCA-Zyklus: **P**lan → **D**o → **C**heck → **A**ct
+
+## PDCA / Deming-Kreis
+```
+    Plan → Do
+     ↑       ↓
+    Act ← Check
+```
+- **Plan:** Problem analysieren, Lösung planen
+- **Do:** Lösung klein ausprobieren (Pilot)
+- **Check:** Ergebnisse messen und bewerten
+- **Act:** Bei Erfolg → standardisieren; sonst → nächste Runde
+
+## BPR — Business Process Reengineering
+Radikales Neu-Gestalten von Prozessen (nicht schrittweise):
+- Hinterfrage fundamentale Annahmen
+- Dramatische Verbesserungen (nicht 5%, sondern 50%)
+- Risikoreicher als Kaizen
+
+## RPA — Robotic Process Automation
+Softwareroboter übernehmen regelbasierte, repetitive Aufgaben:
+- Daten aus PDF lesen → in System eingeben
+- Rechnungen verarbeiten
+- Reports erstellen
+
+Tools: UiPath, Automation Anywhere, Power Automate
+
+## Auswahl der richtigen Methode
+| Situation | Methode |
+|-----------|---------|
+| Schrittweise Verbesserung | Kaizen / PDCA |
+| Qualitätsprobleme messen | Six Sigma / DMAIC |
+| Verschwendung sehen | Lean / VSM |
+| Radikaler Wandel nötig | BPR |
+| Repetitive Tasks automatisieren | RPA |
+
+**Merke:** Kein "One Size Fits All" — Methode zur Situation wählen$C$,
+   '["Prozessoptimierung","Kaizen","PDCA","BPR","RPA"]', 'Optimierung');
+
+  -- ════════════════════════════════════════════════════════════════
+  -- BUSINESS ANALYSE
+  -- ════════════════════════════════════════════════════════════════
+
+  INSERT INTO cards (box_id, user_id, title, content, tags, category) VALUES
+  (v_ba_box, v_uid, 'Was macht ein Business Analyst?',
+$C$Ein **Business Analyst (BA)** ist die Brücke zwischen Geschäftswelt und IT — er übersetzt Geschäftsbedürfnisse in klare Anforderungen.
+
+## Kernaufgaben
+1. **Ist-Analyse:** Wie funktioniert der aktuelle Prozess? Was sind die Probleme?
+2. **Soll-Konzept:** Wie soll der zukünftige Prozess aussehen?
+3. **Anforderungsmanagement:** Anforderungen erheben, dokumentieren, priorisieren
+4. **Stakeholder-Management:** Zwischen Business und IT vermitteln
+5. **Lösungsvalidierung:** Prüfen ob die IT-Lösung die Geschäftsanforderungen erfüllt
+
+## BA vs. Product Owner vs. Projektleiter
+| Rolle | Fokus |
+|-------|-------|
+| **Business Analyst** | Was braucht das Business? (Anforderungen) |
+| **Product Owner** | Was kommt wann ins Produkt? (Priorisierung, Backlog) |
+| **Projektleiter** | Wie wird das Projekt geliefert? (Zeit, Budget, Scope) |
+
+## BABOK — Knowledge Areas (IIBA-Standard)
+1. Business Analysis Planning & Monitoring
+2. Elicitation & Collaboration
+3. Requirements Life Cycle Management
+4. Strategy Analysis
+5. Requirements Analysis & Design Definition
+6. Solution Evaluation
+
+## Wichtige BA-Kompetenzen
+- Analytisches Denken und Strukturierung
+- Kommunikation und Moderation
+- Fachkenntnisse (Domänenwissen)
+- Methoden: BPMN, UML, User Stories, Workshop-Leitung
+
+**Merke:** BA = Übersetzer zwischen Business-Bedarf und IT-Lösung; Verständnis BEIDER Welten$C$,
+   '["Business Analyse","BA","Rolle","BABOK","Anforderungen"]', 'Grundlagen'),
+
+  (v_ba_box, v_uid, 'SWOT-Analyse',
+$C$Die **SWOT-Analyse** ist ein strategisches Werkzeug zur Bewertung eines Unternehmens oder Projekts.
+
+## SWOT-Matrix
+| | **Intern** | |
+|--|-----------|--|
+| | Stärken (S) | Schwächen (W) |
+| **Extern** | Chancen (O) | Risiken (T) |
+
+**S — Strengths (Stärken):**
+Was das Unternehmen/Produkt gut kann; interne Vorteile
+*Beispiel: starke Marke, erfahrenes Team, Patente*
+
+**W — Weaknesses (Schwächen):**
+Interne Nachteile; verbesserungswürdig
+*Beispiel: hohe Kosten, veraltete IT, geringe Liquidität*
+
+**O — Opportunities (Chancen):**
+Externe Entwicklungen die genutzt werden können
+*Beispiel: wachsender Markt, neuer Technologie-Trend, Konkurrent zieht sich zurück*
+
+**T — Threats (Threats/Risiken):**
+Externe Gefahren die schaden können
+*Beispiel: neue Regulierung, aggressiver Wettbewerber, Rezession*
+
+## SWOT → Strategie ableiten (TOWS)
+| Kombination | Strategie |
+|-------------|----------|
+| S + O | **SO-Strategie:** Stärken nutzen um Chancen zu ergreifen |
+| S + T | **ST-Strategie:** Stärken nutzen um Risiken abzuwehren |
+| W + O | **WO-Strategie:** Chancen nutzen um Schwächen zu beheben |
+| W + T | **WT-Strategie:** Schwächen minimieren, Risiken vermeiden |
+
+## Anwendung
+- Unternehmensanalyse (Strategie)
+- Projektstart
+- Produktentscheidungen
+- Markteintrittsstrategie
+
+**Merke:** SWOT: S/W = intern, O/T = extern; Ziel = daraus Strategien ableiten (TOWS)$C$,
+   '["SWOT","Analyse","Strategie","Business Analyse","TOWS"]', 'Analyse'),
+
+  (v_ba_box, v_uid, 'Gap-Analyse & As-Is / To-Be',
+$C$Die **Gap-Analyse** zeigt den Unterschied zwischen dem aktuellen und dem gewünschten Zustand.
+
+## Konzept
+```
+As-Is (Ist-Zustand)    →    GAP    →    To-Be (Soll-Zustand)
+Was haben wir?          Unterschied     Was wollen wir?
+```
+
+## Schritt-für-Schritt
+
+**1. As-Is analysieren**
+- Aktuellen Prozess dokumentieren
+- Schwachstellen und Pain Points identifizieren
+- KPIs des Ist-Zustands messen
+
+**2. To-Be definieren**
+- Zielzustand beschreiben (aus Unternehmensstrategie ableiten)
+- KPIs des Soll-Zustands festlegen
+
+**3. Gap identifizieren**
+- Wo liegen die Unterschiede?
+- Was fehlt: Prozesse, Fähigkeiten, Systeme, Ressourcen?
+
+**4. Maßnahmen ableiten**
+- Wie schließen wir den Gap?
+- Priorisierung nach Aufwand vs. Nutzen (Business Value)
+
+## Gap-Typen
+| Gap-Typ | Beispiel |
+|---------|---------|
+| **Prozess-Gap** | Manueller Prozess vs. automatisierter Ziel-Prozess |
+| **Kompetenz-Gap** | Team kann neues Tool noch nicht bedienen |
+| **System-Gap** | Altsystem kann neue Anforderungen nicht erfüllen |
+| **Daten-Gap** | Benötigte Daten werden nicht erhoben |
+
+## Typische BA-Deliverables
+- As-Is Prozessdiagramm (BPMN)
+- To-Be Prozessdiagramm (BPMN)
+- Gap-Report
+- Maßnahmenplan (Roadmap)
+
+**Merke:** Gap = Ist minus Soll; Aufgabe des BA = Gap sichtbar machen und Maßnahmen definieren$C$,
+   '["Gap-Analyse","As-Is","To-Be","Business Analyse","Prozess"]', 'Analyse'),
+
+  (v_ba_box, v_uid, 'Business Case erstellen',
+$C$Ein **Business Case** rechtfertigt eine Investition durch Gegenüberstellung von Nutzen und Kosten.
+
+## Zweck
+- Entscheidungsgrundlage für Investitionen
+- "Warum sollen wir in dieses Projekt / Produkt investieren?"
+- Basis für Projektgenehmigung und Budget
+
+## Typischer Business Case Aufbau
+
+**1. Executive Summary**
+Kurz: Was wird vorgeschlagen? Was ist der Nutzen? Was kostet es?
+
+**2. Problemstellung / Ausgangssituation**
+Welches Problem lösen wir? Was sind die Konsequenzen des Nicht-Handelns?
+
+**3. Lösungsoptionen**
+Mindestens 3: Status Quo / Option A / Option B
+
+**4. Kosten-Nutzen-Analyse**
+| | Option A | Option B |
+|--|----------|----------|
+| Investitionskosten | 200.000€ | 350.000€ |
+| Jährliche Betriebskosten | 20.000€ | 10.000€ |
+| Jährlicher Nutzen | 80.000€ | 150.000€ |
+| Break-Even | 3 Jahre | 2,5 Jahre |
+| NPV (5 Jahre) | 120.000€ | 280.000€ |
+| ROI | 60% | 80% |
+
+**5. Risikoanalyse**
+Was kann schiefgehen? Wahrscheinlichkeit × Auswirkung
+
+**6. Empfehlung**
+Klare Handlungsempfehlung mit Begründung
+
+## Wichtige Kennzahlen
+- **ROI** (Return on Investment): $(Nutzen - Kosten) / Kosten \times 100$
+- **NPV** (Net Present Value): Barwert zukünftiger Zahlungsströme
+- **Break-Even-Point:** Wann sind Investitionen zurückgespielt?
+- **Payback Period:** Wie lange bis zur Amortisation?
+
+**Merke:** Business Case = Investition rational rechtfertigen; immer mehrere Optionen vergleichen$C$,
+   '["Business Case","ROI","Kosten-Nutzen","Investition","Entscheidung"]', 'Analyse'),
+
+  (v_ba_box, v_uid, 'Stakeholder-Management für BAs',
+$C$Als Business Analyst musst du Stakeholder aktiv managen — sie sind deine wichtigste Ressource.
+
+## Stakeholder im BA-Kontext
+
+**Interne Stakeholder:**
+- Auftraggeber / Sponsor (Budget, Entscheidung)
+- Fachbereich (zukünftige Nutzer, Domänenwissen)
+- IT/Entwicklung (Umsetzung)
+- Management (Strategie, Genehmigung)
+
+**Externe Stakeholder:**
+- Kunden / Endnutzer
+- Regulatoren (Gesetze, Normen)
+- Lieferanten / Partner
+
+## Kommunikationsplan
+Für jeden Stakeholder festlegen:
+| Stakeholder | Interesse | Einfluss | Kommunikation | Häufigkeit |
+|-------------|-----------|----------|--------------|------------|
+| CEO | hoch | sehr hoch | Status-Mail | Monatlich |
+| Fachbereich | sehr hoch | mittel | Workshop | Wöchentlich |
+| Entwickler | mittel | hoch | Daily/Review | Täglich |
+| Regulatoren | niedrig | hoch | Formaler Report | Quartalsweise |
+
+## Umgang mit schwierigen Stakeholdern
+
+**"Ich weiß nicht was ich will"** → Prototyp/Mock zeigen, Fragen stellen
+
+**"Das haben wir immer so gemacht"** → Daten zeigen, Nutzen erklären
+
+**"Das ist Zeitverschwendung"** → Kurze Meetings, konkrete Ergebnisse liefern
+
+**"Ich will alles in den Scope"** → MoSCoW-Priorisierung, Business Case nutzen
+
+**Merke:** Stakeholder früh einbinden > nachträglich überzeugen; Kommunikationsplan für alle$C$,
+   '["Stakeholder","Management","BA","Kommunikation","Konflikt"]', 'Kommunikation'),
+
+  (v_ba_box, v_uid, 'Prozessmodellierung als Business Analyst',
+$C$Der BA modelliert Prozesse als Werkzeug zur Analyse und Kommunikation.
+
+## Einsatzbereiche der Prozessmodellierung
+- Ist-Zustand dokumentieren und teilen
+- Schwachstellen visualisieren
+- Soll-Zustand kommunizieren
+- Basis für IT-Anforderungen ableiten
+- Schulungsunterlage für neue Mitarbeiter
+
+## Modellierungs-Reifegrade
+
+**Niveau 1: Informell (Whiteboard)**
+Schnelle Skizze im Workshop — nicht normiert, aber schnell.
+
+**Niveau 2: EPK (Ereignisgesteuerte Prozesskette)**
+Klassisch in SAP-Projekten:
+```
+[Auftrag eingegangen] → (Prüfen) → [Auftrag korrekt?]
+                                    Ja → (Bestätigen) → [Bestätigung gesendet]
+                                    Nein → (Ablehnen) → [Ablehnung gesendet]
+```
+
+**Niveau 3: BPMN 2.0 (Standard)**
+Professionell, werkzeugunterstützt, ausführbar.
+
+## Was kommt nach der Modellierung?
+1. Review mit Stakeholdern
+2. Schwachstellen markieren (Lean-Analyse)
+3. Soll-Prozess entwerfen
+4. Anforderungen ableiten:
+   - FA: "System muss Auftragseingang automatisch bestätigen"
+   - NFA: "Bestätigung innerhalb 30 Sekunden"
+
+## Tools
+- **Enterprise Architect:** Vollständiges UML/BPMN-Tool
+- **Signavio:** Web-basiert, kollaborativ
+- **Camunda:** Open Source, ausführbar
+- **draw.io / Lucidchart:** Einfach, kostenlos
+
+**Merke:** BA modelliert Prozesse nicht als Selbstzweck, sondern als Kommunikationswerkzeug$C$,
+   '["BA","Prozessmodellierung","EPK","BPMN","Werkzeuge"]', 'Modellierung');
+
+  -- ════════════════════════════════════════════════════════════════
+  -- STRATEGISCHES MANAGEMENT
+  -- ════════════════════════════════════════════════════════════════
+
+  INSERT INTO cards (box_id, user_id, title, content, tags, category) VALUES
+  (v_strategy, v_uid, 'Business Model Canvas',
+$C$Das **Business Model Canvas (BMC)** ist ein strategisches Werkzeug zur Visualisierung von Geschäftsmodellen auf einem einzigen Blatt.
+
+## Die 9 Bausteine
+
+| Baustein | Frage | Beispiel (Netflix) |
+|----------|-------|-------------------|
+| **Kundensegmente** | Für wen? | Streaming-Abonnenten |
+| **Wertversprechen** | Was bieten wir? | Unlimitierter Content, kein Werbung |
+| **Kanäle** | Wie erreichen wir? | App, Website, Smart TV |
+| **Kundenbeziehungen** | Wie interagieren wir? | Selbstservice, Algorithmus |
+| **Einnahmequellen** | Womit verdienen wir? | Monatliche Abo-Gebühr |
+| **Schlüsselressourcen** | Was brauchen wir? | Lizenzen, Technologie, Daten |
+| **Schlüsselaktivitäten** | Was tun wir? | Contenteinkauf, App-Entwicklung |
+| **Schlüsselpartner** | Wen brauchen wir? | Studios, Telekommunikation |
+| **Kostenstruktur** | Was kostet es? | Content-Lizenzen, Server, Personal |
+
+## Anordnung im Canvas
+```
+[Schlüssel- | Schlüssel-  | Wert-      | Kunden-  | Kunden-   ]
+[partner   | aktivitäten | versprechen| beziehung| segmente  ]
+[          | Schlüssel-  |            | Kanäle   |           ]
+[          | ressourcen  |            |          |           ]
+[────────── Kostenstruktur ──────────|─── Einnahmequellen ──]
+```
+
+## Lean Canvas (für Startups)
+Variante für Startups — ersetzt einige Felder durch:
+- Problem, Lösung, Unfairer Vorteil, Metriken
+
+**Merke:** BMC = gesamtes Geschäftsmodell auf 1 Seite; 9 Bausteine; Startpunkt für Strategie$C$,
+   '["BMC","Business Model Canvas","Strategie","Geschäftsmodell","Startup"]', 'Strategie'),
+
+  (v_strategy, v_uid, 'Porters Five Forces',
+$C$**Porters Five Forces** (1979) analysiert die Wettbewerbsintensität und Attraktivität einer Branche.
+
+## Die 5 Kräfte
+
+**1. Bedrohung durch neue Wettbewerber**
+Wie leicht können neue Unternehmen eintreten?
+- Hohe Eintrittsbarrieren (Kapital, Regulierung, Marke) → geringe Bedrohung
+- *Niedrig: Restaurants. Hoch: Luftfahrt, Pharma*
+
+**2. Verhandlungsmacht der Lieferanten**
+Können Lieferanten Preise diktieren?
+- Wenige Lieferanten, einzigartiges Produkt → hohe Macht
+- *Hoch: Intel-Chips für PC-Hersteller*
+
+**3. Verhandlungsmacht der Kunden**
+Können Kunden Preise drücken?
+- Viele Alternativen, wenige große Kunden → hohe Macht
+- *Hoch: Walmart verhandelt mit kleinen Lieferanten*
+
+**4. Bedrohung durch Substitute**
+Gibt es alternative Produkte die den gleichen Nutzen erfüllen?
+- *Taxi vs. Uber; Zeitung vs. Social Media*
+
+**5. Rivalität unter bestehenden Wettbewerbern**
+Wie intensiv ist der Wettbewerb?
+- Viele gleich starke Konkurrenten, langsames Marktwachstum → hohe Rivalität
+
+## Auswertung
+- 5 starke Kräfte = unattraktive Branche (niedriger Gewinn)
+- 5 schwache Kräfte = attraktive Branche (hoher Gewinn möglich)
+
+## Strategie ableiten
+- Eintrittsbarrieren erhöhen (Kundenbindung, Patente)
+- Lieferantenmacht reduzieren (mehrere Quellen)
+- Kundenmacht reduzieren (Wechselkosten erhöhen)
+
+**Merke:** 5 Forces = Branchenanalyse; alle 5 Kräfte analysieren und bewerten$C$,
+   '["Porter","Five Forces","Strategie","Wettbewerb","Branchenanalyse"]', 'Strategie'),
+
+  (v_strategy, v_uid, 'OKR — Objectives & Key Results',
+$C$**OKRs** sind ein Zielrahmen der Ambition mit Messbarkeit verbindet. Erfunden bei Intel, populär durch Google.
+
+## Struktur
+```
+Objective (O):  Inspirierendes, qualitatives Ziel
+  Key Result 1: Messbares Ergebnis (Wie wissen wir, ob O erreicht ist?)
+  Key Result 2: Weiteres messbares Ergebnis
+  Key Result 3: ...
+```
+
+## Beispiel
+**Objective:** Wir werden zur bevorzugten HR-Software für KMU in der DACH-Region.
+
+**Key Results:**
+- KR1: NPS steigt von 32 auf 50
+- KR2: 200 neue Kunden mit < 200 Mitarbeitern in Q3
+- KR3: Churn Rate sinkt von 5% auf 2%
+- KR4: Support-Tickets pro Kunde reduzieren sich um 30%
+
+## OKR-Prinzipien
+- **Ambitioniert:** Gut wenn 70% erreicht (keine 100%-Ziele!)
+- **Transparent:** Alle OKRs sind für alle sichtbar
+- **Bottum-Up + Top-Down:** Team UND Führung definieren OKRs
+- **Kurzfristig:** Meist quartalsweise (nicht 1 Jahr)
+- **Nicht vergütet:** OKRs sind kein Bonus-Grundlage
+
+## OKR vs. KPI
+| | OKR | KPI |
+|--|-----|-----|
+| Zweck | Richtung und Lernen | Controlling und Monitoring |
+| Zeitraum | Quartal | Permanent |
+| Amibtion | Stretch Goals (70% gut) | Zu erfüllende Ziele (100%) |
+
+## OKR-Prozess
+```
+Strategische Ziele → Company OKRs → Team OKRs → Weekly Check-In → Quarterly Review
+```
+
+**Merke:** O = inspirierend, WAS; KR = messbar, WIE; 70% erreicht = Erfolg$C$,
+   '["OKR","Objectives","Key Results","Strategie","Ziele"]', 'Strategie'),
+
+  (v_strategy, v_uid, 'Balanced Scorecard (BSC)',
+$C$Die **Balanced Scorecard** (Kaplan & Norton, 1992) übersetzt Unternehmensstrategie in messbare Ziele aus 4 Perspektiven.
+
+## Die 4 Perspektiven
+
+**1. Finanzperspektive** — Wie sehen uns unsere Anteilseigner?
+- Umsatzwachstum, Gewinnmarge, ROI, Cashflow
+- *Ziel: Shareholder Value steigern*
+
+**2. Kundenperspektive** — Wie sehen uns unsere Kunden?
+- Kundenzufriedenheit (NPS), Marktanteil, Kundentreue
+- *Ziel: Wertversprechen liefern*
+
+**3. Interne Prozessperspektive** — Was müssen wir intern gut machen?
+- Durchlaufzeiten, Qualitätsraten, Innovationsrate
+- *Ziel: Kernprozesse exzellent gestalten*
+
+**4. Lern- & Entwicklungsperspektive** — Wie können wir uns verbessern?
+- Mitarbeiterzufriedenheit, Kompetenzentwicklung, IT-Infrastruktur
+- *Ziel: Innovationsfähigkeit aufbauen*
+
+## Strategy Map
+Zeigt Ursache-Wirkungs-Beziehungen:
+```
+Lernen (Basis) → Prozesse (gut) → Kunden (zufrieden) → Finanzen (gut)
+```
+
+## BSC-Entwicklung
+1. Strategie formulieren
+2. Strategische Ziele ableiten (je Perspektive)
+3. KPIs bestimmen
+4. Zielwerte setzen
+5. Maßnahmen definieren
+
+## Vor- und Nachteile
+| Vorteile | Nachteile |
+|----------|-----------|
+| Ganzheitlich (nicht nur Finanzen) | Aufwändig einzuführen |
+| Strategie wird messbar | Kann bürokratisch werden |
+| Kommunikationsinstrument | Zu viele KPIs möglich |
+
+**Merke:** BSC = Strategie in 4 Perspektiven messen; Finanzen allein reichen nicht$C$,
+   '["BSC","Balanced Scorecard","Strategie","KPI","Perspektiven"]', 'Strategie'),
+
+  (v_strategy, v_uid, 'PESTEL-Analyse',
+$C$Die **PESTEL-Analyse** untersucht das externe Makroumfeld eines Unternehmens.
+
+## Die 6 Faktoren
+
+**P — Political (Politisch)**
+Regierungsstabilität, Handelspolitik, Subventionen, Steuerpolitik
+*Beispiel: Brexit-Unsicherheit; US-Zölle auf Stahl*
+
+**E — Economic (Wirtschaftlich)**
+Wirtschaftswachstum, Inflation, Zinsen, Wechselkurse, Arbeitslosigkeit
+*Beispiel: Niedrigzinsphase erleichtert Investitionen; Inflation erhöht Rohstoffkosten*
+
+**S — Social (Sozio-kulturell)**
+Demografischer Wandel, Konsumverhalten, Bildung, Lebensstil
+*Beispiel: Alterung der Gesellschaft → Pflegebedarf steigt*
+
+**T — Technological (Technologisch)**
+Technologieentwicklung, Digitalisierung, Automatisierung, F&E
+*Beispiel: KI verändert Arbeitswelt; E-Commerce verdrängt Einzelhandel*
+
+**E — Environmental (Ökologisch)**
+Klimawandel, Umweltregulierung, Ressourcenknappheit, Nachhaltigkeit
+*Beispiel: CO2-Steuer; Verbot von Verbrenner-PKW ab 2035*
+
+**L — Legal (Rechtlich)**
+Gesetze, Regulierung, Datenschutz (DSGVO), Arbeitsrecht
+*Beispiel: DSGVO erhöht Compliance-Aufwand; Mindestlohn steigt*
+
+## Anwendung
+1. Faktoren identifizieren und beschreiben
+2. Einfluss auf das Unternehmen einschätzen (+/-/neutral)
+3. Strategische Konsequenzen ableiten
+
+## PEST vs. PESTEL vs. STEEPLE
+- PEST = ohne Environmental + Legal
+- PESTEL = komplett
+- STEEPLE = + Ethical
+
+**Merke:** PESTEL = externes Makroumfeld; erst verstehen was außen passiert, dann intern reagieren$C$,
+   '["PESTEL","PEST","Makroumfeld","Strategie","Analyse"]', 'Analyse'),
+
+  (v_strategy, v_uid, 'Unternehmensberatung — Rollen & Methoden',
+$C$**Management Consulting** (Unternehmensberatung) hilft Unternehmen bei strategischen, organisatorischen und operativen Herausforderungen.
+
+## Beratungstypen
+| Typ | Fokus | Beispiele |
+|-----|-------|---------|
+| **Strategieberatung** | Langfristige Ausrichtung | McKinsey, BCG, Bain |
+| **IT-Beratung** | Technologie, ERP, Digitalisierung | Accenture, Capgemini, IBM |
+| **Prozessberatung** | Optimierung von Abläufen | PwC, Deloitte |
+| **Personalberatung** | HR, Change Management | Kienbaum |
+| **Spezialist** | Nische (Logistik, Gesundheit) | Diverse |
+
+## Berater-Lifecycle
+```
+Akquise → Diagnose → Konzept → Umsetzung → Stabilisierung → Exit
+```
+
+## Wichtige Consultant-Methoden
+
+**Issue Tree / Hypothesis Tree:**
+Problem strukturiert aufschlüsseln (MECE-Prinzip):
+```
+Umsatzrückgang
+├── Weniger Kunden
+│   ├── Schlechte Akquise
+│   └── Hohe Churn Rate
+└── Niedrigerer Warenkorbwert
+    ├── Preisreduktion
+    └── Mix-Shift zu günstigen Produkten
+```
+
+**MECE-Prinzip (Mutually Exclusive, Collectively Exhaustive):**
+- Kein Überschneiden (Mutually Exclusive)
+- Alles abgedeckt (Collectively Exhaustive)
+
+**Hypothesenbasiertes Arbeiten:**
+- Erst Hypothese aufstellen, dann Daten sammeln (nicht umgekehrt!)
+- Schnellere Analyse, gezieltere Datenerhebung
+
+**Pyramid Principle (Barbara Minto):**
+Kommunikation: Ergebnis zuerst, dann Begründung (Top-Down):
+```
+Empfehlung → Gründe → Fakten/Daten
+```
+
+**Merke:** Consultant = Problemlöser; MECE + Hypothesis-Led + Pyramid Principle = Kern-Methodik$C$,
+   '["Consulting","Berater","MECE","Pyramid Principle","Strategie"]', 'Beruf');
+
+  -- ════════════════════════════════════════════════════════════════
+  -- PROJEKTMANAGEMENT (klassisch)
+  -- ════════════════════════════════════════════════════════════════
+
+  INSERT INTO cards (box_id, user_id, title, content, tags, category) VALUES
+  (v_pm_classic, v_uid, 'Klassisches Projektmanagement & Wasserfallmodell',
+$C$Das **klassische (traditionelle) Projektmanagement** folgt einem linearen, phasenbasierten Ansatz.
+
+## Projektdefinition
+Ein Projekt ist:
+- **Einmalig** (kein Routinevorgang)
+- **Zielorientiert** (klares Ergebnis)
+- **Zeitlich begrenzt** (Anfang + Ende)
+- **Ressourcen-beschränkt** (Budget, Personal)
+- **Komplex** (erfordert Koordination)
+
+## Wasserfallmodell (Phasen)
+```
+Anforderungen → Design → Implementierung → Test → Deployment → Wartung
+     ↓               ↓            ↓             ↓          ↓
+ (Lastenheft)  (Architektur)  (Code)    (QS-Tests)  (Produktion)
+```
+
+Jede Phase wird vollständig abgeschlossen bevor die nächste beginnt.
+
+**Vorteil:** Klare Planung, Dokumentation, geeignet für stabile Anforderungen.
+**Nachteil:** Wenig Flexibilität; Fehler werden spät entdeckt; Kundenfeedback erst am Ende.
+
+## Magisches Dreieck
+Drei Projektziele in Spannung zueinander:
+```
+         Scope/Qualität
+             /\
+            /  \
+           /    \
+      Zeit ──────  Kosten
+```
+Wird einer geändert, beeinflusst es die anderen: "Schneller, billiger, besser — wähle zwei."
+
+## Projektmanagement-Standards
+- **PMBOK (PMI):** Process-based, USA-Standard
+- **PRINCE2:** Process-based, UK/EMEA-Standard
+- **ISO 21500:** Internationaler Standard
+
+**Merke:** Wasserfall = phasenweise, sequenziell; gut bei klaren Anforderungen; Magisches Dreieck = Scope/Zeit/Kosten$C$,
+   '["PM","Wasserfall","Projektmanagement","PRINCE2","Magisches Dreieck"]', 'Grundlagen'),
+
+  (v_pm_classic, v_uid, 'Projektstrukturplan (PSP / WBS)',
+$C$Der **Projektstrukturplan (PSP)** — englisch Work Breakdown Structure (WBS) — gliedert das Projekt hierarchisch in überschaubare Arbeitspakete.
+
+## Zweck
+- Vollständigkeit sicherstellen: Alles was getan werden muss ist geplant
+- Basis für Zeit- und Kostenplanung
+- Verantwortliche zuordnen
+
+## Aufbau
+```
+Projekt: CRM-Einführung
+├── 1. Projektmanagement
+│   ├── 1.1 Projektplanung
+│   ├── 1.2 Statusberichte
+│   └── 1.3 Projektabschluss
+├── 2. Anforderungsanalyse
+│   ├── 2.1 Stakeholder-Interviews
+│   ├── 2.2 Prozessmodellierung
+│   └── 2.3 Anforderungsdokument
+├── 3. Systemeinführung
+│   ├── 3.1 Systemkonfiguration
+│   ├── 3.2 Datenmigration
+│   └── 3.3 Integration
+└── 4. Schulung & Rollout
+    ├── 4.1 Schulungskonzept
+    ├── 4.2 Schulungsdurchführung
+    └── 4.3 Go-Live
+```
+
+## Arbeitspaket-Beschreibung
+Jedes Arbeitspaket hat:
+- Beschreibung der Tätigkeit
+- Verantwortliche Person
+- Dauer / Aufwand
+- Kosten
+- Ergebnis (Deliverable)
+
+## PSP vs. Netzplan vs. Gantt
+| Werkzeug | Zeigt | Tool |
+|---------|-------|------|
+| PSP | Struktur + Inhalt | Hierarchie |
+| Netzplan | Abhängigkeiten + kritischer Pfad | Vorgangsknoten |
+| Gantt-Chart | Zeitplan | Balkendiagramm |
+
+**Merke:** PSP = WAS muss getan werden (Inhalt); Gantt = WANN (Zeit); Netzplan = WARUM in dieser Reihenfolge$C$,
+   '["PM","PSP","WBS","Projektstrukturplan","Arbeitspaket"]', 'Planung'),
+
+  (v_pm_classic, v_uid, 'Risikomanagement im Projekt',
+$C$**Risikomanagement** identifiziert, bewertet und steuert Risiken die den Projekterfolg gefährden.
+
+## Risikoprozess
+```
+Identifizieren → Analysieren → Bewerten → Maßnahmen → Überwachen
+```
+
+## Risikoidentifikation
+- Brainstorming im Team
+- Checklisten (Erfahrungen aus Vergangenheit)
+- Interviews mit Experten
+- SWOT-Analyse
+
+## Risikobewertung — Matrix
+**Risikobewertung = Eintrittswahrscheinlichkeit × Auswirkung**
+
+```
+Auswirkung
+hoch  | Mittel | Hoch | Kritisch |
+mittel| Niedrig| Mittel| Hoch   |
+gering| Minimal| Niedrig|Mittel  |
+      | selten  | möglich | wahrsch.
+                 Wahrscheinlichkeit
+```
+
+## Risikostrategien
+| Strategie | Wann | Beispiel |
+|-----------|------|---------|
+| **Vermeiden** | Kritisches Risiko | Technologie wechseln |
+| **Mindern** | Häufiges Risiko | Prototyp bauen |
+| **Übertragen** | Versicherbar | Versicherung abschließen |
+| **Akzeptieren** | Geringes Risiko | Puffer einplanen |
+
+## Risikoregister
+Tabelle mit allen Risiken:
+| ID | Risiko | W'keit | Auswirkung | Score | Maßnahme | Eigentümer |
+|----|--------|--------|-----------|-------|---------|----------|
+| R1 | Schlüssel-MA kündigt | 20% | Hoch | 8 | Stv. benennen | PM |
+| R2 | API veraltet | 30% | Mittel | 6 | Mocking | TL |
+
+**Merke:** Risiko = Wahrscheinlichkeit × Auswirkung; 4 Strategien: Vermeiden/Mindern/Übertragen/Akzeptieren$C$,
+   '["PM","Risikomanagement","Risikoregister","Risikomatrix","Projekt"]', 'Risiko'),
+
+  (v_pm_classic, v_uid, 'Gantt-Chart & Meilensteine',
+$C$Das **Gantt-Chart** ist die universelle Darstellung von Projektplänen — Aufgaben gegen Zeit.
+
+## Grundstruktur
+```
+Aufgabe                  Woche 1  2  3  4  5  6  7  8
+─────────────────────────────────────────────────────
+Anforderungsanalyse      [====]
+Systemdesign                  [===]
+Entwicklung Sprint 1              [======]
+Entwicklung Sprint 2                       [======]
+Testing                                          [==]
+◆ Milestone: Go-Live                                 ◆
+```
+
+## Bestandteile
+- **Aufgaben/Vorgänge:** Zeilen im Gantt
+- **Balken:** Dauer der Aufgabe
+- **Abhängigkeiten:** Pfeile zwischen Balken (Finish-to-Start, etc.)
+- **Meilensteine:** Raute (◆) — wichtige Ereignisse, kein Zeitraum
+- **Kritischer Pfad:** Rote Balken — Verzögerung hier = Projektverzögerung
+
+## Vorgangsabhängigkeiten
+| Typ | Beschreibung |
+|-----|-------------|
+| FS (Finish-to-Start) | B startet wenn A fertig (häufigste) |
+| SS (Start-to-Start) | B startet wenn A startet |
+| FF (Finish-to-Finish) | B endet wenn A endet |
+| SF (Start-to-Finish) | B endet wenn A startet (selten) |
+
+## Tools
+- **MS Project:** De-facto Standard, mächtig
+- **Smartsheet:** Cloud-basiert
+- **Asana / Jira:** Agil + Gantt
+- **Excel/PowerPoint:** Einfache Projekte
+
+## Kritischer Pfad (CPM)
+Der längste Weg durch das Projekt = Mindest-Projektdauer.
+Puffer (Float) = Zeit die ein Vorgang sich verzögern kann ohne das Projekt zu verzögern.
+
+**Merke:** Gantt = Was wird wann gemacht; Kritischer Pfad = keine Pufferzeit; Meilensteine = Kontrollpunkte$C$,
+   '["PM","Gantt","Meilensteine","Kritischer Pfad","Zeitplanung"]', 'Planung'),
+
+  (v_pm_classic, v_uid, 'Change Management im Projekt',
+$C$**Change Management** steuert den menschlichen Aspekt von Veränderungen — Widerstände überwinden und Akzeptanz aufbauen.
+
+## Warum scheitern Projekte wirklich?
+Technisch oft gelöst — aber Menschen machen nicht mit.
+- Fehlende Kommunikation: "Warum ändert sich das?"
+- Angst vor Kompetenzverlust
+- Gewohnheiten vs. neue Prozesse
+- Fehlende Führungsunterstützung
+
+## Kübler-Ross Kurve (Veränderungskurve)
+Emotionale Phasen bei Veränderungen:
+```
+Leistung
+  ↑        Schock → Verneinung
+  |                    ↘
+  |          ↑Akzeptanz  Frust
+  |          ↑           ↘
+  | Erkundung              Tal der Tränen
+  |    ↑
+  +──────────────────────────→ Zeit
+```
+
+## 8-Stufen-Modell (Kotter)
+1. Dringlichkeit erzeugen
+2. Führungskoalition aufbauen
+3. Vision entwickeln
+4. Vision kommunizieren
+5. Hindernisse beseitigen
+6. Kurzfristige Erfolge schaffen
+7. Veränderung weiter antreiben
+8. Veränderung im Unternehmen verankern
+
+## Kommunikationsplan im Change
+- Wer muss was wissen? (Stakeholder)
+- Welche Botschaft? (WIIFM: What's In It For Me?)
+- Über welchen Kanal?
+- Wie häufig?
+
+## Change vs. Projektmanagement
+Change Management und Projektmanagement gehen Hand in Hand:
+- PM = Technische Lieferung
+- CM = Menschliche Adoption
+
+**Merke:** Ohne Change Management scheitern 70% der Transformationsprojekte (McKinsey); Menschen stehen im Mittelpunkt$C$,
+   '["Change Management","Veränderung","Kotter","Kübler-Ross","Projekt"]', 'Führung');
 
   RAISE NOTICE 'Seed erfolgreich! Bereiche, Boxen und Karten für % erstellt.', v_uid;
 END;
