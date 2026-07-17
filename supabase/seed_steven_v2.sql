@@ -34,12 +34,14 @@ BEGIN
   SELECT id INTO v_sql_box    FROM public.boxes WHERE user_id = v_uid AND name = 'SQL';
   SELECT id INTO v_bi_box     FROM public.boxes WHERE user_id = v_uid AND name = 'Business Intelligence';
   SELECT id INTO v_scrum      FROM public.boxes WHERE user_id = v_uid AND name = 'Scrum';
-  SELECT id INTO v_bprozesse  FROM public.boxes WHERE user_id = v_uid AND name = 'Geschaeftsprozesse';
+  SELECT id INTO v_bprozesse  FROM public.boxes WHERE user_id = v_uid AND name = 'Geschäftsprozesse';
   SELECT id INTO v_ba_box     FROM public.boxes WHERE user_id = v_uid AND name = 'Business Analyse';
   SELECT id INTO v_strategy   FROM public.boxes WHERE user_id = v_uid AND name = 'Strategisches Management';
   SELECT id INTO v_pm_classic FROM public.boxes WHERE user_id = v_uid AND name = 'Projektmanagement';
 
-  IF v_itmathe IS NULL THEN RAISE EXCEPTION 'Box IT Mathe nicht gefunden — seed_steven.sql zuerst ausfuehren!'; END IF;
+  IF v_itmathe    IS NULL THEN RAISE EXCEPTION 'Box "IT Mathe" nicht gefunden — seed_steven.sql zuerst ausfuehren!'; END IF;
+  IF v_bprozesse  IS NULL THEN RAISE EXCEPTION 'Box "Geschaeftsprozesse" nicht gefunden — seed_steven.sql zuerst ausfuehren!'; END IF;
+  IF v_scrum      IS NULL THEN RAISE EXCEPTION 'Box "Scrum" nicht gefunden — seed_steven.sql zuerst ausfuehren!'; END IF;
 
   -- ════════════════════════════════════════════════════════════════
   -- IT MATHE — Weitere Karten
