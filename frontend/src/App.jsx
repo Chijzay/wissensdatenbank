@@ -53,6 +53,16 @@ export default function App() {
     else localStorage.removeItem('nav-entry-id');
   }, [view, activeEntry, session]);
 
+  // Zufällige Karte öffnen (aus allen Karten, gewichtet nach Favoriten-Priorität)
+  const openRandomCard = async (excludeId = null) => {
+    try {
+      const [card, boxes] = await Promise.all([api.cards.randomAll(excludeId), api.boxes.list()]);
+      const box = boxes.find(b => b.id === card.box_id) || {};
+      setActiveEntry({ ...card, box_name: box.name || '', box_color: box.color || '', box_icon: box.icon || '', box_parent_id: box.parent_id || null });
+      setView('entry');
+    } catch { /* keine Karten vorhanden */ }
+  };
+
   // Laden (Verbindung wird aufgebaut)
   if (session === undefined) return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -84,6 +94,7 @@ export default function App() {
       onClose={() => { setActiveEntry(null); setView('home'); }}
       onStartQuiz={(entry) => { setQuizEntry(entry); setView('home'); }}
       onNavigate={(entry) => { setActiveEntry(entry); }}
+      onRandom={() => openRandomCard(activeEntry.id)}
     />
   );
 

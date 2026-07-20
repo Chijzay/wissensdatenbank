@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Mic, Send, Search, X, Plus, ArrowLeft, ChevronRight, ChevronDown, Trash2, Sparkles, Shuffle, GraduationCap, GripVertical, LogOut, Pencil, LayoutGrid } from 'lucide-react';
-import { api } from '../api/client.js';
+import { Mic, Send, Search, X, Plus, ArrowLeft, ChevronRight, ChevronDown, Trash2, Sparkles, Shuffle, GraduationCap, GripVertical, LogOut, Pencil, LayoutGrid, Star } from 'lucide-react';
+import { api, pickWeightedRandom } from '../api/client.js';
 import { DndContext, closestCenter, PointerSensor, TouchSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, rectSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -85,7 +85,9 @@ export default function Home({ onOpenEntry, onStartReview, onShowImpressum, onSh
   const [aiError, setAiError] = useState('');
 
   const [showAll, setShowAll] = useState(false);
+  const [favOnly, setFavOnly] = useState(false);
   const FEED_LIMIT = 6;
+  const FAV_COLOR = '#f59e0b';
   const [showAllBereiche, setShowAllBereiche] = useState(false);
   const BEREICHE_LIMIT = 5;
 
@@ -415,9 +417,25 @@ export default function Home({ onOpenEntry, onStartReview, onShowImpressum, onSh
   };
   const goHome = () => { setActiveBereich(null); setActiveBox(null); setSaveToBox(null); };
 
+  // Sichtbare Einträge: optional nur Favoriten, nach Priorität sortiert
+  const visibleEntries = favOnly
+    ? entries.filter(e => (e.favorite || 0) > 0)
+        .sort((a, b) => (b.favorite || 0) - (a.favorite || 0) || new Date(b.updated_at) - new Date(a.updated_at))
+    : entries;
+
+  // Zufällige Karte öffnen — Favoriten mit hoher Priorität erscheinen häufiger
   const openRandom = () => {
-    if (!entries.length) return;
-    onOpenEntry(entries[Math.floor(Math.random() * entries.length)]);
+    const pick = pickWeightedRandom(visibleEntries);
+    if (pick) onOpenEntry(pick);
+  };
+
+  // Favoriten-Priorität direkt im Feed durchschalten: 0 → 1 → 2 → 3 → 0
+  const cycleFavorite = async (entry) => {
+    const next = ((entry.favorite || 0) + 1) % 4;
+    setEntries(prev => prev.map(e => e.id === entry.id ? { ...e, favorite: next } : e));
+    try {
+      await api.cards.update(entry.id, { favorite: next });
+    } catch { loadEntries(); }
   };
 
   // Breadcrumb Label
@@ -1021,13 +1039,22 @@ export default function Home({ onOpenEntry, onStartReview, onShowImpressum, onSh
             style={{ flex: 1, padding: '9px 0', fontSize: 14 }} />
           {search && <button onClick={() => setSearch('')}><X size={13} style={{ color: 'var(--text-muted)' }} /></button>}
         </div>
-        <button className="search-btn" onClick={openRandom} disabled={!entries.length} title="Zufällige Notiz öffnen"
+        <button className="search-btn" onClick={() => { setFavOnly(v => !v); setShowAll(false); }} title={favOnly ? 'Alle Einträge anzeigen' : 'Nur Favoriten anzeigen (nach Priorität)'}
+          style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 14px', borderRadius: 10,
+            border: `1px solid ${favOnly ? FAV_COLOR : 'var(--border)'}`,
+            background: favOnly ? FAV_COLOR + '18' : 'var(--surface)',
+            color: favOnly ? FAV_COLOR : 'var(--text-muted)', fontSize: 13, fontWeight: favOnly ? 700 : 500, whiteSpace: 'nowrap', transition: 'all 0.15s' }}
+          onMouseEnter={e => { e.currentTarget.style.borderColor = FAV_COLOR; e.currentTarget.style.color = FAV_COLOR; }}
+          onMouseLeave={e => { if (!favOnly) { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-muted)'; } }}>
+          <Star size={14} fill={favOnly ? FAV_COLOR : 'none'} /> Favoriten
+        </button>
+        <button className="search-btn" onClick={openRandom} disabled={!visibleEntries.length} title={favOnly ? 'Zufälligen Favoriten öffnen' : 'Zufällige Notiz öffnen'}
           style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 14px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-muted)', fontSize: 13, fontWeight: 500, whiteSpace: 'nowrap', transition: 'all 0.15s' }}
           onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.color = 'var(--accent)'; }}
           onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-muted)'; }}>
           <Shuffle size={14} /> Zufall
         </button>
-        <button className="search-btn" onClick={() => entries.length && onStartReview(entries)} disabled={!entries.length} title="Alle Einträge wiederholen"
+        <button className="search-btn" onClick={() => visibleEntries.length && onStartReview(visibleEntries)} disabled={!visibleEntries.length} title={favOnly ? 'Favoriten wiederholen' : 'Alle Einträge wiederholen'}
           style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 14px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-muted)', fontSize: 13, fontWeight: 500, whiteSpace: 'nowrap', transition: 'all 0.15s' }}
           onMouseEnter={e => { e.currentTarget.style.borderColor = '#22c55e'; e.currentTarget.style.color = '#22c55e'; }}
           onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-muted)'; }}>
@@ -1036,13 +1063,13 @@ export default function Home({ onOpenEntry, onStartReview, onShowImpressum, onSh
       </div>
 
       {/* FEED */}
-      {entries.length === 0 ? (
+      {visibleEntries.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-muted)' }}>
-          {search ? 'Keine Einträge gefunden.' : 'Noch keine Einträge — fang oben an!'}
+          {favOnly ? 'Noch keine Favoriten — markiere Einträge mit dem Stern.' : search ? 'Keine Einträge gefunden.' : 'Noch keine Einträge — fang oben an!'}
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {(showAll || search ? entries : entries.slice(0, FEED_LIMIT)).map(entry => (
+          {(showAll || search || favOnly ? visibleEntries : visibleEntries.slice(0, FEED_LIMIT)).map(entry => (
             <button key={entry.id} onClick={() => onOpenEntry(entry)}
               style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '13px 16px', textAlign: 'left', width: '100%', transition: 'border-color 0.15s' }}
               onMouseEnter={e => e.currentTarget.style.borderColor = entry.box_color || 'var(--accent)'}
@@ -1061,17 +1088,32 @@ export default function Home({ onOpenEntry, onStartReview, onShowImpressum, onSh
                     background: (entry.box_color || '#6366f1') + '22', color: entry.box_color || '#6366f1' }}>
                     {entry.box_icon} {entry.box_name}
                   </span>
-                  <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{formatDate(entry.updated_at)}</span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    {/* Favoriten-Priorität: Klick schaltet 0 → ★ → ★★ → ★★★ → 0 */}
+                    <span role="button" tabIndex={0}
+                      onClick={e => { e.stopPropagation(); cycleFavorite(entry); }}
+                      onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); e.preventDefault(); cycleFavorite(entry); } }}
+                      title={(entry.favorite || 0) > 0 ? `Priorität ${entry.favorite} — Klick zum Ändern` : 'Als Favorit markieren'}
+                      style={{ display: 'flex', alignItems: 'center', gap: 1, padding: '2px 4px', borderRadius: 6, cursor: 'pointer',
+                        opacity: (entry.favorite || 0) > 0 ? 1 : 0.35 }}>
+                      {(entry.favorite || 0) > 0
+                        ? Array.from({ length: entry.favorite }).map((_, i) => (
+                            <Star key={i} size={12} fill={FAV_COLOR} style={{ color: FAV_COLOR }} />
+                          ))
+                        : <Star size={12} style={{ color: 'var(--text-muted)' }} />}
+                    </span>
+                    <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{formatDate(entry.updated_at)}</span>
+                  </span>
                 </div>
               </div>
             </button>
           ))}
-          {!search && entries.length > FEED_LIMIT && (
+          {!search && !favOnly && visibleEntries.length > FEED_LIMIT && (
             <button onClick={() => setShowAll(v => !v)}
               style={{ padding: '10px', borderRadius: 10, border: '1px dashed var(--border)', color: 'var(--text-muted)', fontSize: 13, transition: 'all 0.15s' }}
               onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.color = 'var(--accent)'; }}
               onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-muted)'; }}>
-              {showAll ? `↑ Weniger anzeigen` : `↓ Alle ${entries.length} Einträge anzeigen`}
+              {showAll ? `↑ Weniger anzeigen` : `↓ Alle ${visibleEntries.length} Einträge anzeigen`}
             </button>
           )}
         </div>

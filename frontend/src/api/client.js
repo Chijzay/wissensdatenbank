@@ -7,6 +7,19 @@ function parseTags(tags) {
   try { return JSON.parse(tags || '[]'); } catch { return []; }
 }
 
+// Gewichteter Zufall: Favoriten erscheinen häufiger (Gewicht = 1 + Priorität 0–3)
+export function pickWeightedRandom(cards) {
+  if (!cards?.length) return null;
+  const weight = c => 1 + (c.favorite || 0);
+  const total = cards.reduce((s, c) => s + weight(c), 0);
+  let r = Math.random() * total;
+  for (const c of cards) {
+    r -= weight(c);
+    if (r <= 0) return c;
+  }
+  return cards[cards.length - 1];
+}
+
 async function ai(action, data = {}) {
   const { data: result, error } = await supabase.functions.invoke('ai', {
     body: { action, ...data },
@@ -209,6 +222,17 @@ export const api = {
       }
 
       return { ...card, tags: parseTags(card.tags), questions: (questions || []).map(q => q.question), links };
+    },
+
+    // Zufällige Karte aus dem gesamten Bestand (gewichtet nach Favoriten-Priorität)
+    randomAll: async (excludeId = null) => {
+      const { data: cards, error } = await supabase.from('cards').select('id, favorite').is('deleted_at', null);
+      if (error) throw error;
+      let pool = (cards || []).filter(c => c.id !== excludeId);
+      if (!pool.length) pool = cards || [];
+      if (!pool.length) throw new Error('Keine Karten vorhanden');
+      const chosen = pickWeightedRandom(pool);
+      return api.cards.get(chosen.id);
     },
 
     random: async (boxId) => {

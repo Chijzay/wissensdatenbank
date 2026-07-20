@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { ArrowLeft, Mic, MicOff, Sparkles, Link2, Trash2, Brain, Plus, X, Info, ChevronDown, ChevronUp, Tag, Folder, Eye, PencilLine } from 'lucide-react';
+import { ArrowLeft, Mic, MicOff, Sparkles, Link2, Trash2, Brain, Plus, X, Info, ChevronDown, ChevronUp, Tag, Folder, Eye, PencilLine, Shuffle, Star } from 'lucide-react';
 import { api } from '../api/client.js';
 import ContentRenderer from './ContentRenderer.jsx';
 import ConfirmModal from './ConfirmModal.jsx';
@@ -88,7 +88,15 @@ function parseAiError(err) {
   return 'KI-Fehler: ' + (msg.slice(0, 120) || 'Unbekannter Fehler');
 }
 
-export default function EntryDetail({ entry, onClose, onStartQuiz, onNavigate }) {
+const FAV_LEVELS = [
+  { value: 3, label: 'Hoch' },
+  { value: 2, label: 'Mittel' },
+  { value: 1, label: 'Niedrig' },
+  { value: 0, label: 'Kein Favorit' },
+];
+const FAV_COLOR = '#f59e0b';
+
+export default function EntryDetail({ entry, onClose, onStartQuiz, onNavigate, onRandom }) {
   const DRAFT_KEY = `draft-card-${entry.id}`;
 
   // Entwurf aus localStorage lesen (einmalig bei Mount)
@@ -108,6 +116,9 @@ export default function EntryDetail({ entry, onClose, onStartQuiz, onNavigate })
   });
 
   const [tags, setTags] = useState([]);
+  const [favorite, setFavorite] = useState(entry.favorite || 0);
+  const [showFavPicker, setShowFavPicker] = useState(false);
+  const [shuffling, setShuffling] = useState(false);
   const [tagInput, setTagInput] = useState('');
   const [category, setCategory] = useState(entry.category || '');
   const [questions, setQuestions] = useState([]);
@@ -150,6 +161,7 @@ export default function EntryDetail({ entry, onClose, onStartQuiz, onNavigate })
       setQuestions(full.questions || []);
       setLinks(full.links || []);
       setCategory(full.category || '');
+      setFavorite(full.favorite || 0);
     }).catch(() => {});
     api.boxes.list().then(setTopics).catch(() => {});
   }, [entry.id]);
@@ -315,15 +327,46 @@ export default function EntryDetail({ entry, onClose, onStartQuiz, onNavigate })
     onClose();
   };
 
+  // Weiterblättern: ungespeicherte Änderungen sichern, dann zufällige nächste Karte
+  const nextRandom = async () => {
+    if (!onRandom || shuffling) return;
+    setShuffling(true);
+    try {
+      if (!saved) await save();
+      await onRandom();
+    } finally { setShuffling(false); }
+  };
+
+  // Favoriten-Priorität sofort speichern (unabhängig vom Entwurfs-Status)
+  const setFavoritePriority = async (value) => {
+    setShowFavPicker(false);
+    const prev = favorite;
+    setFavorite(value);
+    try {
+      await api.cards.update(entry.id, { favorite: value });
+    } catch {
+      setFavorite(prev);
+      setError('Favorit konnte nicht gespeichert werden — Migration 004 schon ausgeführt?');
+    }
+  };
+
   return (
     <div style={{ maxWidth: 760, margin: '0 auto', padding: '24px 20px' }}>
 
       {/* Top-Bar */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 24 }}>
+      <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 10, marginBottom: 24 }}>
         <button onClick={handleClose}
           style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 8, border: '1px solid var(--border)', color: 'var(--text-muted)', fontSize: 14, fontWeight: 500 }}>
           <ArrowLeft size={15} /> Zurück
         </button>
+        {onRandom && (
+          <button onClick={nextRandom} disabled={shuffling} title="Zufällige nächste Karte anzeigen"
+            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 8, border: '1px solid var(--accent)55', background: 'var(--accent)11', color: 'var(--accent)', fontSize: 14, fontWeight: 600, opacity: shuffling ? 0.6 : 1, transition: 'all 0.15s' }}
+            onMouseEnter={e => e.currentTarget.style.background = 'var(--accent)22'}
+            onMouseLeave={e => e.currentTarget.style.background = 'var(--accent)11'}>
+            <Shuffle size={14} /> {shuffling ? 'Blättert…' : 'Blättern'}
+          </button>
+        )}
         <div style={{ flex: 1 }} />
         {!saved && (
           <span style={{ fontSize: 11, padding: '3px 8px', background: '#f59e0b22', color: '#f59e0b', borderRadius: 6, border: '1px solid #f59e0b55', fontWeight: 600, letterSpacing: 0.3 }}>
@@ -335,6 +378,38 @@ export default function EntryDetail({ entry, onClose, onStartQuiz, onNavigate })
             style={{ padding: '7px 10px', color: 'var(--text-muted)', fontSize: 13, fontWeight: 700, borderRight: '1px solid var(--border)' }}>A−</button>
           <button onClick={() => changeFontSize(1)} title="Größer"
             style={{ padding: '7px 10px', color: 'var(--text-muted)', fontSize: 15, fontWeight: 700 }}>A+</button>
+        </div>
+        {/* Favorit mit Priorität */}
+        <div style={{ position: 'relative' }}>
+          <button onClick={() => setShowFavPicker(p => !p)}
+            title={favorite > 0 ? `Favorit: ${FAV_LEVELS.find(l => l.value === favorite)?.label}` : 'Als Favorit markieren'}
+            style={{ display: 'flex', alignItems: 'center', gap: 4, padding: 8, borderRadius: 8,
+              border: `1px solid ${favorite > 0 ? FAV_COLOR + '88' : 'var(--border)'}`,
+              background: favorite > 0 ? FAV_COLOR + '18' : 'transparent',
+              color: favorite > 0 ? FAV_COLOR : 'var(--text-muted)' }}>
+            <Star size={15} fill={favorite > 0 ? FAV_COLOR : 'none'} />
+            {favorite > 0 && <span style={{ fontSize: 12, fontWeight: 700 }}>{favorite}</span>}
+          </button>
+          {showFavPicker && (
+            <div style={{ position: 'absolute', top: 'calc(100% + 6px)', right: 0, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, padding: 6, zIndex: 50, minWidth: 170, boxShadow: '0 8px 24px #00000044' }}>
+              <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', padding: '4px 8px' }}>Priorität</p>
+              {FAV_LEVELS.map(l => (
+                <button key={l.value} onClick={() => setFavoritePriority(l.value)}
+                  style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '7px 10px', borderRadius: 7, fontSize: 13, textAlign: 'left',
+                    background: favorite === l.value ? 'var(--surface2)' : 'none',
+                    color: l.value > 0 ? 'var(--text)' : 'var(--text-muted)',
+                    fontWeight: favorite === l.value ? 700 : 400 }}>
+                  <span style={{ display: 'flex', gap: 1, width: 42, flexShrink: 0 }}>
+                    {l.value > 0
+                      ? Array.from({ length: l.value }).map((_, i) => <Star key={i} size={12} fill={FAV_COLOR} style={{ color: FAV_COLOR }} />)
+                      : <X size={12} style={{ opacity: 0.6 }} />}
+                  </span>
+                  {l.label}
+                  {favorite === l.value && <span style={{ marginLeft: 'auto', color: FAV_COLOR }}>✓</span>}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
         <button onClick={() => setShowMeta(m => !m)}
           style={{ padding: 8, borderRadius: 8, border: '1px solid var(--border)', color: showMeta ? 'var(--accent)' : 'var(--text-muted)' }}>
